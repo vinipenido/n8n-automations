@@ -12,59 +12,42 @@ execução e identificadores de infraestrutura foram substituídos por placehold
 ## Arquitetura geral
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph IN["📥 Entradas"]
+        direction TB
         WA[WhatsApp<br/>Chatwoot · Z-API · Cloud API]
-        GPT[GPTMaker<br/>webhooks síncronos]
+        GPT[GPTMaker<br/>webhook síncrono]
         SCH[Schedule Triggers]
-        SH[(Google Sheets<br/>listas operacionais)]
     end
 
-    subgraph N8N["⚙️ Orquestração — n8n"]
-        AG[agents/<br/>agentes conversacionais]
-        RG[rag/<br/>busca semântica]
-        PL[pipelines/<br/>lotes e réguas]
-        IT[integrations/<br/>APIs de terceiros]
+    subgraph WF["⚙️ Workflows — n8n"]
+        direction TB
+        AG["agents/ · conversacional"]
+        RG["rag/ · busca semântica"]
+        PL["pipelines/ · lote"]
+        IT["integrations/ · APIs"]
     end
 
-    subgraph AI["🧠 Camada de IA"]
-        LLM[GPT-4.1 · GPT-5]
-        WSP[Whisper<br/>transcrição de áudio]
-        EMB[Embeddings OpenAI]
-        MCP[[MCP Server<br/>Agenda]]
-    end
-
-    subgraph DATA["💾 Dados e estado"]
-        RD[(Redis<br/>buffer + memória)]
-        SB[(Supabase<br/>pgvector + cadastros)]
-        PGDB[(PostgreSQL<br/>ERP)]
-        AT[(Airtable<br/>CRM)]
-        MY[(MySQL)]
+    subgraph INFRA["🧠 Infraestrutura compartilhada"]
+        direction TB
+        IA[OpenAI · Whisper · Embeddings<br/>MCP Server]
+        DB[(Redis · Supabase pgvector<br/>Postgres · Airtable · Sheets)]
     end
 
     subgraph OUT["📤 Saídas"]
+        direction TB
         MSG[Resposta ao cliente]
-        CRMU[Movimentação de funil]
-        ERR[Alertas de falha<br/>Discord]
+        CRMU[Funil de CRM]
     end
 
     WA --> AG
     GPT --> RG & IT
-    SCH --> PL & RG & AG
-    SH --> PL
+    SCH --> PL & AG
 
-    AG --> LLM & WSP & EMB
-    AG -.tool.-> MCP
-    RG --> LLM & EMB
-
-    AG --> RD & SB & AT
-    RG --> SB & PGDB
-    PL --> SH & SB
-    IT --> MY
-
-    AG --> MSG & CRMU
-    RG & PL & IT --> MSG
-    RG -.Error Trigger.-> ERR
+    AG & RG --> IA
+    AG & RG & PL & IT --> DB
+    AG & RG & PL & IT --> MSG
+    AG --> CRMU
 ```
 
 **Como ler:** as quatro pastas de workflows compartilham a mesma infraestrutura de
