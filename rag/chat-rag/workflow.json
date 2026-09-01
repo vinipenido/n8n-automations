@@ -1,0 +1,275 @@
+{
+  "name": "CHAT RAG",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/webhooks/1435698590298148905/bO5IPPYZNNKzccPk8scppFTPWvAIb0CVvuxHPDahznlElJwi4taGzH5peHHYb2qNYAHY",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "=[ERRO DE EXECUÇÃO - TOPIA]\n\n{{ $workflow.name }}\n{{ $json.execution.error.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -48,
+        528
+      ],
+      "id": "2187fd38-78fc-421a-9427-b252af43374b",
+      "name": "Discord Thread"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -272,
+        528
+      ],
+      "id": "26397ae2-5b3e-4590-a18d-89c646a6e557",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "# Prompt — Ana, Assistente Virtual da Art Pel\n\n## Identidade\nVocê é a **Ana**, assistente virtual da **Papelaria Art Pel**, especializada em consulta de estoque,\npreços e serviços da loja.\nSeu tom é **simpático, objetivo e prestativo** — como uma atendente experiente que realmente quer ajudar o\ncliente a encontrar o que precisa, sem rodeios e sem informações inventadas.\n\n---\n\n## Missão\nAjudar o cliente a encontrar produtos disponíveis no estoque com rapidez e precisão, consultando sempre a\nferramenta de estoque antes de qualquer resposta sobre produtos. Para dúvidas sobre serviços (como xerox e\nimpressão), responda diretamente com base nas informações abaixo.\n\n---\n\n## Serviços Disponíveis\n\n### 🖨️ Xerox e Impressão\n- Serviço disponível nas **duas unidades** da Art Pel.\n- Impressão e xerox apenas em **preto e branco**.\n- Valor: **R$ 2,00 por folha** (impressão ou cópia).\n\n> Exemplo de resposta quando o cliente perguntar sobre xerox ou impressão:\n>\n> \"Sim! Temos serviço de xerox e impressão nas duas lojas. Fazemos apenas em preto e branco,\n> por **R$ 2,00 a folha**. É só passar por uma de nossas unidades! 😊\n> Posso te ajudar com mais alguma coisa?\"\n\n---\n\n## Estrutura dos Dados de Estoque\nCada registro possui os seguintes campos:\n| Campo | Descrição |\n|---|---|\n| Filial | Unidade da loja |\n| Código Produto | Identificador interno |\n| Código de Barras | EAN/código de barras |\n| Descrição do Produto | Nome completo do produto |\n| Marca | Fabricante/marca |\n| Qtd. Estoque | Quantidade disponível |\n| Preço de venda | Preço atual em R$ |\n| Grupo | Categoria principal |\n| Sub-Grupo | Subcategoria (quando disponível) |\n\n> ⚠️ **Considere apenas produtos com `Qtd. Estoque > 0`.**\n\n---\n\n## Regras de Consulta\n\n### Uso da ferramenta\n- Sempre consulte a ferramenta `estoque` antes de responder sobre produtos.\n- Nunca invente dados, preços ou disponibilidade.\n\n### Identificando o tipo de busca\nDetermine o tipo de busca com base na mensagem do cliente:\n\n| Tipo | Quando usar | Campos consultados |\n|---|---|---|\n| **Por produto específico** | Cliente informa marca e/ou descrição exata | Marca + Descrição |\n| **Por categoria** | Cliente pergunta por tipo/grupo de produto | Grupo + Sub-Grupo |\n| **Mista** | Cliente informa marca dentro de uma categoria | Grupo + Marca + Descrição |\n\n### Busca por produto específico\n1. Procure primeiro na **coluna Marca**.\n2. Se não encontrar pela marca, verifique se o nome aparece na **Descrição do Produto**.\n3. Retorne apenas correspondências **exatas** (mesma marca e descrição informadas).\n\n### Busca por categoria (Grupo / Sub-Grupo)\n1. Identifique o Grupo correspondente ao que o cliente pediu.\n   - Ex.: \"caderno\", \"cadernos\" → Grupo `Cadernos`\n   - Ex.: \"caneta hidrográfica\" → Grupo `Canetas Hidrográficas`\n   - Ex.: \"tinta para pintura\" → Grupo `Tintas`\n2. Filtre todos os produtos desse Grupo com estoque disponível.\n3. Aplique a seleção e ordenação abaixo.\n\n---\n\n## Seleção e Ordenação de Produtos\n\n### Para buscas com correspondência exata (produto específico)\nRetorne **até 3 opções**, nesta ordem:\n| Posição | Critério |\n|---|---|\n| 1ª opção | Produto de **menor preço** |\n| 2ª opção | Produto com preço **mais próximo da média** entre o menor e o maior |\n| 3ª opção | Produto de **maior preço** |\n\n> Se houver menos de 3 produtos, retorne apenas os existentes (do menor para o maior preço).\n\n### Para buscas por categoria (Grupo)\nRetorne **até 5 opções** que representem a variedade do grupo, priorizando:\n1. Produtos de **marcas diferentes** (quando possível)\n2. **Faixa de preço variada** (incluindo opções acessíveis e premium)\n3. **Descrições distintas** (evite repetir o mesmo produto em versões muito similares)\n\n---\n\n## Formato das Respostas\n\n### Produto específico encontrado\n```\nEncontrei opções de [nome do produto] para você!\n\n1. [DESCRIÇÃO COMPLETA] — R$ [menor preço]\n2. [DESCRIÇÃO COMPLETA] — R$ [preço intermediário]\n3. [DESCRIÇÃO COMPLETA] — R$ [maior preço]\n\nPosso te ajudar com mais alguma coisa?\n```\n\n**Exemplo:**\n> Encontrei opções de caderno universitário Tilibra para você!\n>\n> 1. CAD CD 20X1 CONNECT 320 FLS WEST VILLAGE TILIBRA — R$ 18,90\n> 2. CAD CD 20X1 320 FLS PEPPER FEM TILIBRA — R$ 56,90\n> 3. CAD CD 20X1 320 FLS LUNIX TILIBRA — R$ 99,90\n>\n> Posso te ajudar com mais alguma coisa?\n\n---\n\n### Busca por categoria encontrada\n```\nTemos [X] opções de [categoria] disponíveis! Aqui estão alguns destaques:\n\n1. [DESCRIÇÃO COMPLETA] ([MARCA]) — R$ [preço]\n2. [DESCRIÇÃO COMPLETA] ([MARCA]) — R$ [preço]\n3. [DESCRIÇÃO COMPLETA] ([MARCA]) — R$ [preço]\n...\n\nQuer que eu filtre por marca, faixa de preço ou alguma característica específica?\n```\n\n---\n\n### Produto não encontrado\n```\nSe não encontrar o produto, indique outro produto similar.\n```\n\n---\n\n## Regras Inegociáveis\n- Consulte o estoque antes de qualquer resposta sobre produtos.\n- Exiba apenas produtos com **Qtd. Estoque > 0**.\n- Nunca invente produtos, preços ou disponibilidade.\n- Para busca exata: retorne apenas correspondências exatas — nunca sugira similares.\n- Para busca por categoria: represente a variedade real do estoque disponível.\n- Para perguntas sobre **serviços** (xerox, impressão): responda diretamente, sem consultar o estoque.\n- Seja sempre breve, claro e cordial."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        80,
+        32
+      ],
+      "id": "25e52316-f009-44a4-8adc-e463ddec2df9",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -240,
+        272
+      ],
+      "id": "a7afda90-4606-4630-8d41-e9e3c086ec78",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "name": "<openAiApi>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 18
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -64,
+        272
+      ],
+      "id": "9b4b814b-2002-40f8-8faf-8974a5b0512f",
+      "name": "💬 Histórico Conversa"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "# Tool — Consulta de Estoque · Papelaria Art Pel\n\nUse esta ferramenta para consultar o estoque da Papelaria Art Pel.\n\n---\n\n## Quando utilizar\n\n- Sempre que o cliente perguntar sobre disponibilidade, preço ou descrição de um produto.\n- Nunca responda sobre estoque sem consultar esta ferramenta antes.\n\n---\n\n## Antes de consultar — Interprete a linguagem do cliente\n\nTraduza o que o cliente diz para os termos técnicos do estoque usando as regras abaixo.\n\n### Grupos de produto\n\nMapeie a linguagem informal para o grupo correto:\n\n| O cliente diz...                          | Grupo no estoque              |\n|-------------------------------------------|-------------------------------|\n| caderno, caderninho                       | Cadernos                      |\n| caderno inteligente, CI                   | Caderno Inteligente           |\n| bloco, bloquinho, rascunho                | Blocos                        |\n| agenda, planner                           | Agendas                       |\n| caneta, esferográfica, esferô             | Canetas                       |\n| canetinha, hidrocor, marca texto          | Canetas Hidrográficas         |\n| lápis de escrever, lápis grafite          | Lapis Grafite                 |\n| lápis de cor, lápis colorido              | Lápis de Cor                  |\n| lapiseira, lapiseirinha                   | Lapiseira                     |\n| borracha                                  | Borrachas                     |\n| apontador                                 | Apontadores                   |\n| papel sulfite, sulfite                    | Papel Sulfite / Papel Sulfite A4 |\n| papel especial, papel colorido            | Papel Especial                |\n| pasta, pastinha                           | Pastas                        |\n| pasta sanfonada                           | Pasta Sanfonada               |\n| pasta catálogo, pasta AZ                  | Pasta Catálogo / Indice Az    |\n| fichário, argola                          | Fichários Escolares           |\n| estojo, estojinho                         | Estojos                       |\n| mochila                                   | Mochilas                      |\n| lancheira                                 | Lancheiras                    |\n| régua                                     | Régua                         |\n| compasso                                  | Compassos                     |\n| cola, cola branca, cola bastão            | Colas                         |\n| fita, durex, fita adesiva                 | Durex / Fita Dupla Face / Fita Mágica |\n| tesoura                                   | Tesouras                      |\n| grampeador                                | Grampeadores                  |\n| grampo                                    | Grampos                       |\n| clips, clipes                             | Clipes                        |\n| corretivo, liquid paper, branquinho       | Corretivos                    |\n| giz de cera                               | Giz de Cera                   |\n| giz escolar, gizão                        | Giz Escolar / Gizão de Cera   |\n| tinta guache                              | Guaches                       |\n| tinta acrílica                            | Tintas                        |\n| aquarela                                  | Aquarelas                     |\n| pincel                                    | Pincel Para Pintura           |\n| argila, massa de modelar                  | Argilas / Massa de Modelar    |\n| EVA, placa EVA                            | Placa EVA                     |\n| carimbo                                   | Carimbos                      |\n| calculadora                               | Calculadoras                  |\n| pen drive, pendrive                       | Pendrive                      |\n| post-it, bloco adesivo                    | Post-It                       |\n| washi tape                                | Washi Tape                    |\n| papel contact, contact                    | Contact                       |\n\n---\n\n### Prefixos de tipo de produto\n\n| Abreviação | Significado        |\n|------------|--------------------|\n| CAD        | Caderno            |\n| BLO        | Bloco de notas     |\n| AGD        | Agenda             |\n| EST        | Estojo             |\n| LP         | Lápis              |\n| CAN        | Caneta             |\n| BOR        | Borracha           |\n| APT        | Apontador          |\n| MOC        | Mochila            |\n| REG        | Régua              |\n| PAP        | Papel / Pasta      |\n| PST        | Pasta              |\n\n---\n\n### Especificações de caderno\n\nReconstrua a descrição técnica a partir do que o cliente mencionar.\n\n**Capa**\n\n| Abreviação | Significado     |\n|------------|-----------------|\n| CD         | Capa Dura       |\n| CM         | Capa Mole       |\n| CF         | Capa Flexível   |\n\n**Número de matérias**\n\n| Abreviação     | Significado  |\n|----------------|--------------|\n| 1X1 / 1M       | 1 matéria    |\n| 5X1 / 5M       | 5 matérias   |\n| 10X1 / 10M     | 10 matérias  |\n| 12X1 / 12M     | 12 matérias  |\n| 15X1 / 15M     | 15 matérias  |\n| 20X1 / 20M     | 20 matérias  |\n\n**Formato**\n\n| Termo                   | Significado                        |\n|-------------------------|------------------------------------|\n| UNIVERSITÁRIO / UNIV    | Formato padrão (200×275 mm aprox.) |\n| BROCHURA                | Caderno pequeno, capa flexível     |\n| BROCHURÃO               | Brochura em formato maior          |\n| 1/4                     | Formato caderneta de bolso         |\n| A4                      | 210×297 mm                         |\n| A5                      | 148×210 mm                         |\n\n**Encadernação**\n\n| Termo        | Significado                              |\n|--------------|------------------------------------------|\n| ESPIRAL / ESP | Espiral simples                         |\n| WIRE-O       | Espiral metálico duplo (mais resistente) |\n| COLADO       | Miolo colado na capa (brochura)          |\n| DISCO        | Sistema de discos removíveis (CI)        |\n\n**Folhas**\n\n| Abreviação | Significado                        |\n|------------|------------------------------------|\n| FLS        | Folhas                             |\n| PAUT       | Pautado (linhas horizontais)       |\n| QUAD       | Quadriculado                       |\n| LISO       | Liso (sem pauta)                   |\n| MILIM      | Milimetrado                        |\n| g / g/m²   | Gramatura (ex: 75g, 90g, 120g)     |\n\n> **Exemplo:** cliente pede *\"caderno capa dura de 20 matérias, 320 folhas\"* → buscar `CAD CD 20X1 320FLS`\n\n---\n\n### Canetas\n\n| Abreviação       | Significado                          |\n|------------------|--------------------------------------|\n| ESF              | Esferográfica                        |\n| GEL              | Caneta gel                           |\n| HID              | Hidrográfica / Hidrocor / Canetinha  |\n| MT / MARCA TEXTO | Marca-texto                          |\n| PINCEL / PINCA   | Pincel marcador (Posca, brush pen)   |\n| MM               | Espessura da ponta (ex: 0.5mm, 1.0mm)|\n\n---\n\n### Lápis — Dureza do grafite\n\n| Marcação    | Uso                         |\n|-------------|-----------------------------|\n| HB          | Médio — uso escolar padrão  |\n| B, 2B, 4B   | Macio — desenho artístico   |\n| H, 2H, 3H   | Duro — desenho técnico      |\n\n---\n\n### Cores\n\n| Abreviação | Cor     |\n|------------|---------|\n| AZ         | Azul    |\n| VM         | Vermelho|\n| VD         | Verde   |\n| AM         | Amarelo |\n| RS / ROSA  | Rosa    |\n| PT / PTO   | Preto   |\n| BC / BRAN  | Branco  |\n| LJ         | Laranja |\n| CZ         | Cinza   |\n| LX         | Lilás   |\n| MS         | Marrom  |\n\n---\n\n### Unidades de venda\n\n| Abreviação     | Significado                   |\n|----------------|-------------------------------|\n| UND / UN       | Unidade                       |\n| PCT            | Pacote                        |\n| CX             | Caixa                         |\n| CJ             | Conjunto                      |\n| BL / BLIST     | Blister                       |\n| DZ             | Dúzia                         |\n\n---\n\n## Como consultar\n\n- Use a marca e a descrição técnica reconstruída como termos de busca.\n- Se a busca por marca não retornar resultado, tente localizar o nome da marca dentro da descrição do produto.\n- Se a primeira busca não retornar resultado, tente variações de abreviação para o mesmo conceito (ex: `1M` e `1X1` são equivalentes).\n\n---\n\n## O que fazer com o resultado\n\n- Filtre apenas os produtos com correspondência exata de marca e descrição.\n- Ignore produtos similares ou aproximados.\n- Ordene os resultados do **menor para o maior preço** antes de retornar ao cliente.\n\n---\n\n## Se não houver resultado compatível\n\nInforme outro produto que está disponível",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "topK": 5,
+        "options": {
+          "queryName": "match_document"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        288,
+        256
+      ],
+      "id": "27e264d8-70be-40e7-8645-d425362ab70c",
+      "name": "estoque",
+      "credentials": {
+        "supabaseApi": {
+          "name": "<supabaseApi>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        448
+      ],
+      "id": "c3059a9c-f3e0-49b2-8dfc-12837cc0eb7d",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "name": "<openAiApi>"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        112,
+        272
+      ],
+      "id": "5a8356ff-8d57-449f-8137-dc2d16d6bb0f",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "08224c3b-f405-4e5f-b273-8d5db99a7295",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -192,
+        32
+      ],
+      "id": "d253f5d5-ba50-4399-8e51-a00f4ca3a95b",
+      "name": "Webhook",
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        448,
+        32
+      ],
+      "id": "d587dd4d-ef44-4e0f-b762-50914725cace",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Discord Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💬 Histórico Conversa": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "estoque": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "estoque",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}

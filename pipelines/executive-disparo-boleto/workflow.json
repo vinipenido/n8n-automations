@@ -1,0 +1,1620 @@
+{
+  "name": "Executive | Disparo Boleto Z-API",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1968,
+        -112
+      ],
+      "id": "6768ccb6-06aa-4d29-8bc8-20bd4c067027",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1296,
+        16
+      ],
+      "id": "f9bda8dc-0f1e-4f42-8e9f-50ff8d9af993",
+      "name": "Loop Over Items3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e3e615a5-6607-449e-9280-4bc3d2629af2",
+              "leftValue": "={{ $json.situacao_boleto }}",
+              "rightValue": "ABERTO",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1072,
+        16
+      ],
+      "id": "38ba26d3-7a84-499a-afd0-186401cbe8f3",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "amount": "={{ Math.floor(Math.random() * (240 - 60 + 1)) + 60 }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -208,
+        208
+      ],
+      "id": "c4cb299a-2613-471f-a7a6-2dbc9f6ad19c",
+      "name": "Wait3",
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.gptmaker.ai/v2/channel//start-conversation",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ \n(() => {\n  let celular = $('If3').item.json.celular;\n\n  if (!celular) return null;\n\n  // Remove tudo que não for número\n  let numeros = celular.replace(/\\D/g, '');\n\n  // Remove código do país caso venha junto\n  if (numeros.startsWith('55')) {\n    numeros = numeros.slice(2);\n  }\n\n  // Extrai DDD\n  const ddd = numeros.slice(0, 2);\n  let numero = numeros.slice(2);\n\n  // Se número tiver 8 dígitos (fixo ou celular antigo), adiciona o 9\n  if (numero.length === 8) {\n    numero = '9' + numero;\n  }\n\n  // Se tiver 9 dígitos mas não começar com 9, adiciona\n  if (numero.length === 9 && !numero.startsWith('9')) {\n    numero = '9' + numero.slice(1);\n  }\n\n  // Retorno final\n  return `55${ddd}${numero}`;\n})()\n}}"
+            },
+            {
+              "name": "message",
+              "value": "=Olá  {{ $json.nome_associado }}, tudo bem? Aqui é a Iara, da Executive Seguros. Estou passando somente pra lembrar o(a) senhor(a) sobre o boleto com vencimento em {{ \n(() => {\n  const d = new Date();\n  d.setDate(d.getDate() + 2);\n  return d.toLocaleDateString('pt-BR');\n})()\n}}. O boleto está disponível em {{ $json.short_link }}\n\nAgradeço pela atenção e desejo um ótimo dia para o(a) senhor(a)."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -624,
+        112
+      ],
+      "id": "ea95ae7e-eb1d-45c0-ba24-abd84fc4bb03",
+      "name": "Mensagem 3",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "<httpBearerAuth>"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Caminho 1",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "STATUS": "OK",
+            "NOME": "={{ $('If3').item.json.nome_associado }}",
+            "CELULAR": "={{ $('If3').item.json.celular }}",
+            "DATA ENVIO": "={{ $now }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "NOME",
+              "displayName": "NOME",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CELULAR",
+              "displayName": "CELULAR",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "DATA ENVIO",
+              "displayName": "DATA ENVIO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -400,
+        16
+      ],
+      "id": "7f3b2c90-65c6-4bb0-b1cf-f853aec762fa",
+      "name": "Enviou MSG 6",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Caminho 1",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "STATUS": "❌",
+            "DATA ENVIO": "={{ $now }}",
+            "NOME": "={{ $('If3').item.json.nome_associado }}",
+            "CELULAR": "={{ $('If3').item.json.celular }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "NOME",
+              "displayName": "NOME",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CELULAR",
+              "displayName": "CELULAR",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "DATA ENVIO",
+              "displayName": "DATA ENVIO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -400,
+        208
+      ],
+      "id": "8de1dc49-3bb3-4c57-b7cb-82df4b4d1c2e",
+      "name": "Enviou MSG 7",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.hinova.com.br/api/sga/v2/buscar/boleto/{{ $json.nosso_numero }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -848,
+        112
+      ],
+      "id": "1c13bee8-8a5f-47a8-91c5-7d34a6b2c7dd",
+      "name": "Busca Link",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "<httpBearerAuth>"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1072,
+        -176
+      ],
+      "id": "8d8b4637-9fe2-4fa4-a98f-53fc760a6ab1",
+      "name": "No Operation, do nothing3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        -80
+      ],
+      "id": "5b159c56-6f5c-4733-a65d-c527aa57ee08",
+      "name": "No Operation, do nothing7"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.hinova.com.br/api/sga/v2/listar/boleto-associado/periodo",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "data_vencimento_original_inicial",
+              "value": "={{ \n(() => {\n  const d = new Date();\n  d.setDate(d.getDate() + 2);\n  return d.toLocaleDateString('pt-BR');\n})()\n}}"
+            },
+            {
+              "name": "data_vencimento_original_final",
+              "value": "={{ \n(() => {\n  const d = new Date();\n  d.setDate(d.getDate() + 2);\n  return d.toLocaleDateString('pt-BR');\n})()\n}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1744,
+        16
+      ],
+      "id": "83eda7fa-a2cb-46eb-8f51-5e4881e1c86b",
+      "name": "Listar Boleto D + 2",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "<httpBearerAuth>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1296,
+        624
+      ],
+      "id": "034f14cb-581c-4a6a-b6ca-468b9d683692",
+      "name": "Loop Over Items4"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e3e615a5-6607-449e-9280-4bc3d2629af2",
+              "leftValue": "={{ $json.situacao_boleto }}",
+              "rightValue": "ABERTO",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1072,
+        624
+      ],
+      "id": "aee2a355-f5de-4726-b642-ed5347f6e0eb",
+      "name": "If4"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1072,
+        432
+      ],
+      "id": "dccf9a27-f86d-4a72-93a2-89bf6d2eac24",
+      "name": "No Operation, do nothing8"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1296,
+        1232
+      ],
+      "id": "b4a8bd50-df5d-491f-8893-1ff91ce551e4",
+      "name": "Loop Over Items5"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e3e615a5-6607-449e-9280-4bc3d2629af2",
+              "leftValue": "={{ $json.situacao_boleto }}",
+              "rightValue": "ABERTO",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1072,
+        1232
+      ],
+      "id": "37cc2d69-360b-4a1d-93b0-40c90c572e94",
+      "name": "If5"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1072,
+        1040
+      ],
+      "id": "c54bdf3f-8c3c-4d90-acdb-41f4d7e06ca5",
+      "name": "No Operation, do nothing10"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.hinova.com.br/api/sga/v2/listar/boleto-associado/periodo",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "data_vencimento_original_inicial",
+              "value": "={{ \n(() => {\n  const d = new Date();\n  d.setDate(d.getDate() + 7);\n  return d.toLocaleDateString('pt-BR');\n})()\n}}"
+            },
+            {
+              "name": "data_vencimento_original_final",
+              "value": "={{ \n(() => {\n  const d = new Date();\n  d.setDate(d.getDate() + 7);\n  return d.toLocaleDateString('pt-BR');\n})()\n}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1744,
+        624
+      ],
+      "id": "f24939d1-fcfa-4987-83d6-3171dfec7baf",
+      "name": "Listar Boleto D + 3",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "<httpBearerAuth>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.hinova.com.br/api/sga/v2/listar/boleto-associado/periodo",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "data_vencimento_original_inicial",
+              "value": "={{ \n(() => {\n  const d = new Date();\n  d.setDate(d.getDate() + 15);\n  return d.toLocaleDateString('pt-BR');\n})()\n}}"
+            },
+            {
+              "name": "data_vencimento_original_final",
+              "value": "={{ \n(() => {\n  const d = new Date();\n  d.setDate(d.getDate() + 15);\n  return d.toLocaleDateString('pt-BR');\n})()\n}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1744,
+        1232
+      ],
+      "id": "8c097306-8109-4bc8-a084-7d336fa582f1",
+      "name": "Listar Boleto D + 4",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "<httpBearerAuth>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.hinova.com.br/api/sga/v2/listar/boleto-associado/periodo",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.ZAPI_TOKEN }}d520a3dbee9e7a2b7142d05e191cfc9bf51d3b23c63add2d3117e8a73dbf06f5bc8d7e56bd90bf960dc496382aa1891264a19c78e8624c57b2ecf598b905606deb89f9e16305536905c4e21edcee779babe0a4c214b14782732cb"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "data_vencimento_original_inicial",
+              "value": "={{ \n(() => {\n  const d = new Date();\n  d.setDate(d.getDate() + 7);\n  return d.toLocaleDateString('pt-BR');\n})()\n}}"
+            },
+            {
+              "name": "data_vencimento_original_final",
+              "value": "={{ \n(() => {\n  const d = new Date();\n  d.setDate(d.getDate() + 7);\n  return d.toLocaleDateString('pt-BR');\n})()\n}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1744,
+        624
+      ],
+      "id": "f24939d1-fcfa-4987-83d6-3171dfec7baf",
+      "name": "Listar Boleto D + 7"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.hinova.com.br/api/sga/v2/listar/boleto-associado/periodo",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.ZAPI_TOKEN }}d520a3dbee9e7a2b7142d05e191cfc9bf51d3b23c63add2d3117e8a73dbf06f5bc8d7e56bd90bf960dc496382aa1891264a19c78e8624c57b2ecf598b905606deb89f9e16305536905c4e21edcee779babe0a4c214b14782732cb"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "data_vencimento_original_inicial",
+              "value": "={{ \n(() => {\n  const d = new Date();\n  d.setDate(d.getDate() + 15);\n  return d.toLocaleDateString('pt-BR');\n})()\n}}"
+            },
+            {
+              "name": "data_vencimento_original_final",
+              "value": "={{ \n(() => {\n  const d = new Date();\n  d.setDate(d.getDate() + 15);\n  return d.toLocaleDateString('pt-BR');\n})()\n}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1744,
+        1232
+      ],
+      "id": "8c097306-8109-4bc8-a084-7d336fa582f1",
+      "name": "Listar Boleto D + 15"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "boletos",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1520,
+        624
+      ],
+      "id": "d1af83b0-5060-4fbe-84dd-44fd957379d4",
+      "name": "Split Out D + 7"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "boletos",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1520,
+        16
+      ],
+      "id": "b3563e9c-4b1a-4f5f-9293-29b5874edcf8",
+      "name": "Split Out D + 2"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "boletos",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1520,
+        1232
+      ],
+      "id": "891c64ee-26ba-4dea-bef0-8be6a8b3994d",
+      "name": "Split Out D + 15"
+    },
+    {
+      "parameters": {
+        "amount": "={{ Math.floor(Math.random() * (240 - 60 + 1)) + 60 }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -176,
+        800
+      ],
+      "id": "e51211a7-7d3d-4d92-93dd-3fa1c4bb680c",
+      "name": "Wait",
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.gptmaker.ai/v2/channel//start-conversation",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ \n(() => {\n  let celular = $('If4').item.json.celular;\n\n  if (!celular) return null;\n\n  // Remove tudo que não for número\n  let numeros = celular.replace(/\\D/g, '');\n\n  // Remove código do país caso venha junto\n  if (numeros.startsWith('55')) {\n    numeros = numeros.slice(2);\n  }\n\n  // Extrai DDD\n  const ddd = numeros.slice(0, 2);\n  let numero = numeros.slice(2);\n\n  // Se número tiver 8 dígitos (fixo ou celular antigo), adiciona o 9\n  if (numero.length === 8) {\n    numero = '9' + numero;\n  }\n\n  // Se tiver 9 dígitos mas não começar com 9, adiciona\n  if (numero.length === 9 && !numero.startsWith('9')) {\n    numero = '9' + numero.slice(1);\n  }\n\n  // Retorno final\n  return `55${ddd}${numero}`;\n})()\n}}"
+            },
+            {
+              "name": "message",
+              "value": "=Olá  {{ $json.nome_associado }}, tudo bem? Aqui é a Iara, da Executive Seguros. Estou passando somente pra lembrar o(a) senhor(a) sobre o boleto com vencimento em {{ \n(() => {\n  const d = new Date();\n  d.setDate(d.getDate() + 2);\n  return d.toLocaleDateString('pt-BR');\n})()\n}}. O boleto está disponível em {{ $json.short_link }}\n\nAgradeço pela atenção e desejo um ótimo dia para o(a) senhor(a)."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -624,
+        720
+      ],
+      "id": "2850cb59-e45c-4cb6-ad2d-be4eaf8a59f2",
+      "name": "Mensagem ",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "<httpBearerAuth>"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": 962383190,
+          "mode": "list",
+          "cachedResultName": "Caminho 2",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "STATUS": "OK",
+            "NOME": "={{ $('If3').item.json.nome_associado }}",
+            "CELULAR": "={{ $('If3').item.json.celular }}",
+            "DATA ENVIO": "={{ $now }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "NOME",
+              "displayName": "NOME",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CELULAR",
+              "displayName": "CELULAR",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "DATA ENVIO",
+              "displayName": "DATA ENVIO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -400,
+        624
+      ],
+      "id": "b6d0e5b6-45c3-4df7-b39c-c24efd78eed3",
+      "name": "Enviou MSG ",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": 962383190,
+          "mode": "list",
+          "cachedResultName": "Caminho 2",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "STATUS": "❌",
+            "DATA ENVIO": "={{ $now }}",
+            "NOME": "={{ $('If3').item.json.nome_associado }}",
+            "CELULAR": "={{ $('If3').item.json.celular }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "NOME",
+              "displayName": "NOME",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CELULAR",
+              "displayName": "CELULAR",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "DATA ENVIO",
+              "displayName": "DATA ENVIO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -400,
+        816
+      ],
+      "id": "2202e813-dc51-488c-9fa7-2b652a49ed81",
+      "name": "Enviou MSG 8",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.hinova.com.br/api/sga/v2/buscar/boleto/{{ $json.nosso_numero }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -848,
+        720
+      ],
+      "id": "17626f1a-4e4e-4faa-872e-4f5629be3cf9",
+      "name": "Busca Link1",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "<httpBearerAuth>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": "={{ Math.floor(Math.random() * (240 - 60 + 1)) + 60 }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -176,
+        1232
+      ],
+      "id": "9a20780e-bfe3-440e-857f-36c4e61953e4",
+      "name": "Wait4",
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.gptmaker.ai/v2/channel//start-conversation",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ \n(() => {\n  let celular = $('If5').item.json.celular;\n\n  if (!celular) return null;\n\n  // Remove tudo que não for número\n  let numeros = celular.replace(/\\D/g, '');\n\n  // Remove código do país caso venha junto\n  if (numeros.startsWith('55')) {\n    numeros = numeros.slice(2);\n  }\n\n  // Extrai DDD\n  const ddd = numeros.slice(0, 2);\n  let numero = numeros.slice(2);\n\n  // Se número tiver 8 dígitos (fixo ou celular antigo), adiciona o 9\n  if (numero.length === 8) {\n    numero = '9' + numero;\n  }\n\n  // Se tiver 9 dígitos mas não começar com 9, adiciona\n  if (numero.length === 9 && !numero.startsWith('9')) {\n    numero = '9' + numero.slice(1);\n  }\n\n  // Retorno final\n  return `55${ddd}${numero}`;\n})()\n}}"
+            },
+            {
+              "name": "message",
+              "value": "=Olá  {{ $json.nome_associado }}, tudo bem? Aqui é a Iara, da Executive Seguros. Estou passando somente pra lembrar o(a) senhor(a) sobre o boleto com vencimento em {{ \n(() => {\n  const d = new Date();\n  d.setDate(d.getDate() + 2);\n  return d.toLocaleDateString('pt-BR');\n})()\n}}. O boleto está disponível em {{ $json.short_link }}\n\nAgradeço pela atenção e desejo um ótimo dia para o(a) senhor(a)."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -624,
+        1136
+      ],
+      "id": "52de3898-a9c4-4da6-a00f-11205b5ce0cf",
+      "name": "Mensagem 4",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "<httpBearerAuth>"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": 1654958260,
+          "mode": "list",
+          "cachedResultName": "Caminho 3",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "STATUS": "OK",
+            "NOME": "={{ $('If3').item.json.nome_associado }}",
+            "CELULAR": "={{ $('If3').item.json.celular }}",
+            "DATA ENVIO": "={{ $now }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "NOME",
+              "displayName": "NOME",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CELULAR",
+              "displayName": "CELULAR",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "DATA ENVIO",
+              "displayName": "DATA ENVIO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -400,
+        1040
+      ],
+      "id": "9e3f403e-3d57-4b67-b251-822f242b4be8",
+      "name": "Enviou MSG 9",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": 1654958260,
+          "mode": "list",
+          "cachedResultName": "Caminho 3",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "STATUS": "❌",
+            "DATA ENVIO": "={{ $now }}",
+            "NOME": "={{ $('If3').item.json.nome_associado }}",
+            "CELULAR": "={{ $('If3').item.json.celular }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "NOME",
+              "displayName": "NOME",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CELULAR",
+              "displayName": "CELULAR",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "DATA ENVIO",
+              "displayName": "DATA ENVIO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -400,
+        1232
+      ],
+      "id": "a368a11c-5680-4e56-83e8-c1e2eb2ce06a",
+      "name": "Enviou MSG 10",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.hinova.com.br/api/sga/v2/buscar/boleto/{{ $json.nosso_numero }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -848,
+        1136
+      ],
+      "id": "bc794460-b8d3-455f-9d60-9b8a63010dfc",
+      "name": "Busca Link2",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "<httpBearerAuth>"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        528
+      ],
+      "id": "3b6fe168-3efc-47dc-ace2-b01f9c4ea42d",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        1328
+      ],
+      "id": "dd4c10d3-7e98-496b-8d61-06e1b9b496cf",
+      "name": "No Operation, do nothing9"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1968,
+        624
+      ],
+      "id": "1c7c03e1-dea6-479f-b0de-de441bc7604a",
+      "name": "10 AM"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1968,
+        96
+      ],
+      "id": "793dfcd2-2955-46f1-a37d-ff9ebfc27ead",
+      "name": "9 AM"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 11
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1968,
+        1232
+      ],
+      "id": "848f542c-c13e-4bb3-8cb4-7a655b6b41f9",
+      "name": "11 AM"
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Listar Boleto D + 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items3": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "Busca Link",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem 3": {
+      "main": [
+        [
+          {
+            "node": "Enviou MSG 6",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviou MSG 7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviou MSG 6": {
+      "main": [
+        [
+          {
+            "node": "Wait3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviou MSG 7": {
+      "main": [
+        [
+          {
+            "node": "Wait3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Link": {
+      "main": [
+        [
+          {
+            "node": "Mensagem 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar Boleto D + 2": {
+      "main": [
+        [
+          {
+            "node": "Split Out D + 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items4": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing8",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items5": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing10",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If4": {
+      "main": [
+        [
+          {
+            "node": "Busca Link1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If5": {
+      "main": [
+        [
+          {
+            "node": "Busca Link2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar Boleto D + 3": {
+      "main": [
+        []
+      ]
+    },
+    "Listar Boleto D + 4": {
+      "main": [
+        []
+      ]
+    },
+    "Listar Boleto D + 7": {
+      "main": [
+        [
+          {
+            "node": "Split Out D + 7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar Boleto D + 15": {
+      "main": [
+        [
+          {
+            "node": "Split Out D + 15",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out D + 7": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out D + 2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out D + 15": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem ": {
+      "main": [
+        [
+          {
+            "node": "Enviou MSG ",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviou MSG 8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviou MSG ": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviou MSG 8": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Link1": {
+      "main": [
+        [
+          {
+            "node": "Mensagem ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem 4": {
+      "main": [
+        [
+          {
+            "node": "Enviou MSG 9",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviou MSG 10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviou MSG 9": {
+      "main": [
+        [
+          {
+            "node": "Wait4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviou MSG 10": {
+      "main": [
+        [
+          {
+            "node": "Wait4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Link2": {
+      "main": [
+        [
+          {
+            "node": "Mensagem 4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10 AM": {
+      "main": [
+        []
+      ]
+    },
+    "9 AM": {
+      "main": [
+        []
+      ]
+    },
+    "11 AM": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}

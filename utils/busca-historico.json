@@ -1,0 +1,113 @@
+{
+  "name": "Busca no Histórico",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "e4add696-4ccf-47bd-afca-bd923c561662",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -16
+      ],
+      "id": "29dbca1d-0b96-48c6-a5bf-eb4d667e838e",
+      "name": "Webhook de Entrada",
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verifica se o n8n mandou algum item ou se veio vazio\nconst hasItems = items.length > 0 && Object.keys(items[0].json).length > 0;\n\n// CENÁRIO: CLIENTE SEM COMPRAS\nif (!hasItems) {\n  return [{\n    json: {\n      result_text: \"Este cliente foi localizado no sistema, porém não possui nenhum histórico de compras registrado.\",\n      sales_count: 0,\n      raw_data: []\n    }\n  }];\n}\n\n// ------------------------------------------\n// CENÁRIO: CLIENTE COM COMPRAS (Seu código original melhorado)\n// ------------------------------------------\n\nconst rows = items.map(item => item.json);\n\n// Formatador de Moeda (R$)\nconst money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });\nconst formatDate = (dateString) => {\n  if (!dateString) return 'Data N/D';\n  const date = new Date(dateString);\n  return date.toLocaleDateString('pt-BR');\n};\n\n// 1. Agrupamento\nconst vendasAgrupadas = {};\nlet clienteNome = \"\";\n\nfor (const row of rows) {\n  if (!clienteNome) clienteNome = row.cliente || \"Cliente\";\n\n  const idVenda = row.id_venda;\n\n  if (!vendasAgrupadas[idVenda]) {\n    vendasAgrupadas[idVenda] = {\n      id: idVenda,\n      data: formatDate(row.data_venda),\n      itens: [],\n      totalVenda: 0\n    };\n  }\n\n  vendasAgrupadas[idVenda].itens.push({\n    produto: row.produto,\n    qtd: row.quantidade,\n    unit: row.valor_unitario,\n    total: row.valor_total\n  });\n  \n  // Converte para número para evitar erros de soma se vier como string do banco\n  vendasAgrupadas[idVenda].totalVenda += Number(row.valor_total || 0);\n}\n\n// 2. Construção do Texto\nlet textoFinal = `Cliente: ${clienteNome}\\nHistórico de Compras:\\n`;\n\nfor (const id in vendasAgrupadas) {\n  const v = vendasAgrupadas[id];\n  textoFinal += `\\n--- Venda #${v.id} (${v.data}) ---\\n`;\n  v.itens.forEach(item => {\n    textoFinal += `- ${item.qtd}x ${item.produto} (${money.format(item.unit)} un.)\\n`;\n  });\n  textoFinal += `Total Venda: ${money.format(v.totalVenda)}\\n`;\n}\n\nreturn [{\n  json: {\n    result_text: textoFinal,\n    sales_count: Object.keys(vendasAgrupadas).length,\n    raw_data: vendasAgrupadas\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        -16
+      ],
+      "id": "96dd9089-9a73-4e68-8e9c-c916ed5b2e5a",
+      "name": "Conversão de JSON para texto"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{\n  {\n    \"mensagem\": $json.result_text\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        672,
+        -16
+      ],
+      "id": "8a804c09-9e2b-4e61-96ce-778415a028da",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    cli.fantasia AS cliente,\n    cab.id AS id_venda,\n    cab.data AS data_venda,\n    item.descricao AS produto,\n    item.quant AS quantidade,\n    item.valor AS valor_unitario,\n    item.valorbruto AS valor_total\nFROM \n    t_cliente cli\nINNER JOIN \n    t_venda_cab cab ON cli.id_cliente = cab.id_cliente\nINNER JOIN \n    t_venda_item item ON cab.id = item.id_venda_cab\nWHERE \n    cli.id_cliente = {{ $json.body.id_cliente }}\nORDER BY \n    cab.data DESC, \n    cab.hora_no_pdv DESC\nLIMIT 20;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        224,
+        -16
+      ],
+      "id": "7e270889-2715-4727-9a75-d5abb7e01b56",
+      "name": "Execute a SQL query",
+      "alwaysOutputData": true,
+      "credentials": {
+        "mySql": {
+          "name": "<mySql>"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook de Entrada": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversão de JSON para texto": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Conversão de JSON para texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}

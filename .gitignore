@@ -1,0 +1,15 @@
+# Backup completo da instância n8n — contém credenciais de todos os workflows
+backup-n8n.json
+*backup*.json
+
+# Exports crus, antes da sanitização
+raw/
+*.local.json
+
+# Ambiente
+.env
+.env.*
+
+.DS_Store
+__pycache__/
+tools/secrets.local.json

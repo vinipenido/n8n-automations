@@ -1,0 +1,543 @@
+{
+  "name": "TOP IA | TESTE Disparo Ativo 100% Automático",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": 233995846,
+          "mode": "list",
+          "cachedResultName": "TESTE",
+          "cachedResultUrl": ""
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "STATUS",
+              "lookupValue": "={{\"\"}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -224,
+        -176
+      ],
+      "id": "5d0f64ea-dbcb-4f35-968a-e635ced9a7b2",
+      "name": "Pega Lista de Disparo",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "218feb7c-331c-4e7c-9fad-461504bf89b3",
+              "leftValue": "={{ $json.row_number }}",
+              "rightValue": 11,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        -176
+      ],
+      "id": "4ee280b9-b11a-4a19-a8e6-91025f904624",
+      "name": "Limita Quantidade de Disparos"
+    },
+    {
+      "parameters": {
+        "phoneNumberId": "878787821986811",
+        "recipientPhoneNumber": "={{ String($('Loop - Seleciona Linha para Disparo').item.json.TELEFONE) }}",
+        "template": "teste_topia|pt_BR",
+        "components": {
+          "component": []
+        }
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        -272
+      ],
+      "id": "a65c1d3f-40ae-48d1-a87e-1d3e3875fb47",
+      "name": "Envia Mensagens",
+      "webhookId": "",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "whatsAppApi": {
+          "name": "<whatsAppApi>"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": 233995846,
+          "mode": "list",
+          "cachedResultName": "TESTE",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Loop - Seleciona Linha para Disparo').item.json.row_number }}",
+            "STATUS": "OK",
+            "ID_MSG": "={{ $json.messages[0].id }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "NOME",
+              "displayName": "NOME",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "TELEFONE",
+              "displayName": "TELEFONE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "RAZÃO SOCIAL",
+              "displayName": "RAZÃO SOCIAL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "CIDADE",
+              "displayName": "CIDADE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ID_MSG",
+              "displayName": "ID_MSG",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        -368
+      ],
+      "id": "d0ee76b5-babb-4cb7-af79-474ce9886a6b",
+      "name": "Atualiza Planilha - OK",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": 233995846,
+          "mode": "list",
+          "cachedResultName": "TESTE",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Loop - Seleciona Linha para Disparo').item.json.row_number }}",
+            "STATUS": "ERRO"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "NOME",
+              "displayName": "NOME",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "TELEFONE",
+              "displayName": "TELEFONE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "RAZÃO SOCIAL",
+              "displayName": "RAZÃO SOCIAL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "CIDADE",
+              "displayName": "CIDADE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        -176
+      ],
+      "id": "36ab2f0b-d3fd-44ec-823f-1d39a7f66f1b",
+      "name": "Atualiza Planilha - Erro",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 10,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        -176
+      ],
+      "id": "6f87c67b-0327-468f-aa1d-13ef73a499c4",
+      "name": "Aguarda 10 Minutos",
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        0,
+        -176
+      ],
+      "id": "f90e54b7-f9c4-41e7-a1d9-d50af09ea92d",
+      "name": "Loop - Seleciona Linha para Disparo"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -368
+      ],
+      "id": "35afb301-f5ba-420b-b453-5110b5766441",
+      "name": "Finalizou Lista"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        672,
+        48
+      ],
+      "id": "c2aac65b-2f06-410d-b2a1-a401f3ec884b",
+      "name": "Bateu Limite de Disparos"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": 233995846,
+          "mode": "list",
+          "cachedResultName": "TESTE",
+          "cachedResultUrl": ""
+        },
+        "numberToDelete": 9
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        48
+      ],
+      "id": "1dae27eb-f073-4e9c-8c28-83066a4ce70e",
+      "name": "Limpa Linhas Que Já Receberam o Disparo",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "triggerAtHour": 7,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -416,
+        -176
+      ],
+      "id": "1c33e2f3-a3f1-44ba-8757-43dd122043e3",
+      "name": "Ativa Automação 10:30",
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Pega Lista de Disparo": {
+      "main": [
+        [
+          {
+            "node": "Loop - Seleciona Linha para Disparo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limita Quantidade de Disparos": {
+      "main": [
+        [
+          {
+            "node": "Envia Mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Limpa Linhas Que Já Receberam o Disparo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envia Mensagens": {
+      "main": [
+        [
+          {
+            "node": "Atualiza Planilha - OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Atualiza Planilha - Erro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualiza Planilha - OK": {
+      "main": [
+        [
+          {
+            "node": "Aguarda 10 Minutos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualiza Planilha - Erro": {
+      "main": [
+        [
+          {
+            "node": "Aguarda 10 Minutos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aguarda 10 Minutos": {
+      "main": [
+        [
+          {
+            "node": "Loop - Seleciona Linha para Disparo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop - Seleciona Linha para Disparo": {
+      "main": [
+        [
+          {
+            "node": "Finalizou Lista",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Limita Quantidade de Disparos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpa Linhas Que Já Receberam o Disparo": {
+      "main": [
+        [
+          {
+            "node": "Bateu Limite de Disparos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ativa Automação 10:30": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "name": "Notificação de SMS",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ceb4cfcd-3309-4f16-985b-2f496078d7b8",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -320,
+        0
+      ],
+      "id": "96c5724b-3327-45f7-b4a4-b4cac2c7119d",
+      "name": "Webhook",
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "from": "+19362594049",
+        "to": "‪+18624524788‬",
+        "message": "=Olá! A agente Taty acabou de iniciar um atendimento!  O cliente está no Monitora com o nome de:{{ $json.body.name }} E o telefone é o: {{ $json.body.recipient }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        0
+      ],
+      "id": "c5d394f7-95cd-42e0-841d-db3f23907f15",
+      "name": "Send an SMS/MMS/WhatsApp message",
+      "credentials": {
+        "twilioApi": {
+          "name": "<twilioApi>"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Send an SMS/MMS/WhatsApp message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  }
+}

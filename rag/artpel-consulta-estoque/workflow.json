@@ -1,0 +1,773 @@
+{
+  "name": "ArtPel | GPTMaker → Consulta Estoque",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Adiciona alterados na fila\nINSERT INTO sync_fila (codigo_produto)\nSELECT codigo_produto::text FROM estoque\nWHERE updated_at > (SELECT ultima_sync FROM sync_controle ORDER BY id DESC LIMIT 1)\nON CONFLICT DO NOTHING;\n\n-- Adiciona na fila os que foram removidos do estoque mas ainda estão nos vetores\nINSERT INTO sync_fila (codigo_produto)\nSELECT ev.metadata->'metadata'->>'codigo_produto'\nFROM estoque_vetores ev\nWHERE NOT EXISTS (\n  SELECT 1 FROM estoque e\n  WHERE e.codigo_produto::text = ev.metadata->'metadata'->>'codigo_produto'\n)\nON CONFLICT DO NOTHING;\n\n-- Remove do estoque_vetores tudo que está na fila\nDELETE FROM estoque_vetores\nWHERE metadata->'metadata'->>'codigo_produto' IN (\n  SELECT codigo_produto FROM sync_fila\n);\n\n-- Atualiza sync\nUPDATE sync_controle \nSET ultima_sync = NOW()\nWHERE id = (SELECT MAX(id) FROM sync_controle);\n\nSELECT 1 AS ok;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -32,
+        400
+      ],
+      "id": "35077c78-ef80-4f25-a36f-bc28e5050431",
+      "name": "🗑️ Remover Alterados",
+      "credentials": {
+        "postgres": {
+          "name": "<postgres>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => ({\n  json: {\n    content: [\n      item.json.descricao,\n      item.json.marca,\n      item.json.grupo,\n      item.json.sub_grupo,\n      item.json.item,\n      item.json.tipo\n    ].filter(v => v && v !== 'NAO USA').join(' '),\n    metadata: {\n      codigo_produto: item.json.codigo_produto,\n      descricao:   item.json.descricao,\n      marca:       item.json.marca,\n      grupo:       item.json.grupo,\n      sub_grupo:   item.json.sub_grupo,\n      item:        item.json.item,\n      preco_venda: item.json.preco_venda,\n      qtd_estoque: item.json.qtd_estoque\n    }\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        512
+      ],
+      "id": "6e4061f6-d9ea-4d9f-9d1a-226f582eb8cb",
+      "name": "⚙️ Formatar Produtos"
+    },
+    {
+      "parameters": {
+        "batchSize": 100,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        864,
+        512
+      ],
+      "id": "502ea1d1-6e0c-4396-98f4-2bf86337a8c3",
+      "name": "🔁 Loop Lotes"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "estoque_vetores",
+          "mode": "list",
+          "cachedResultName": "estoque_vetores"
+        },
+        "embeddingBatchSize": 50,
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1088,
+        656
+      ],
+      "id": "a9bb3341-4b10-44a6-9931-dfe6de432486",
+      "name": "🧠 Indexar Vetores",
+      "credentials": {
+        "supabaseApi": {
+          "name": "<supabaseApi>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1104,
+        880
+      ],
+      "id": "b6c294e1-239c-4bc6-b718-5a0d7dbf3959",
+      "name": "🔢 Gerar Embeddings",
+      "credentials": {
+        "openAiApi": {
+          "name": "<openAiApi>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.content }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "metadata",
+                "value": "={{ $json.metadata }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1232,
+        880
+      ],
+      "id": "5d7217a8-2b8e-4226-bd3e-97821b8c9549",
+      "name": "📄 Carregar Documento"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM sync_fila\nWHERE codigo_produto IN (\n  SELECT codigo_produto FROM sync_fila LIMIT 500\n);\n\nUPDATE sync_controle \nSET ultima_sync = NOW(),\n    total_processados = (SELECT COUNT(*) FROM estoque_vetores)\nWHERE id = (SELECT MAX(id) FROM sync_controle);\n\nSELECT 1 AS ok;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        640,
+        304
+      ],
+      "id": "6496cc2c-68cc-4137-8e1e-cc2a57a4eb90",
+      "name": "✅ Atualizar Sync",
+      "credentials": {
+        "postgres": {
+          "name": "<postgres>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "56344e39-dd10-4030-9df6-18cd6af43c3c",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        1088
+      ],
+      "id": "99fddcf7-a2c0-42c5-953d-e0e50b9c2bf7",
+      "name": "📥 Receber Consulta",
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2d9f1cba-b500-4e2f-a178-6351dcd20992",
+              "name": "marca",
+              "value": "={{ $json.body.marca }}",
+              "type": "string"
+            },
+            {
+              "id": "1ce0fb2f-a02e-4073-912b-ba849ca463eb",
+              "name": "descricao",
+              "value": "={{ $json.body.descricao }}",
+              "type": "string"
+            },
+            {
+              "id": "3ecbde20-a80b-4274-b69e-dbb41c5a2558",
+              "name": "preferencia_marca",
+              "value": "={{ $json.body.preferencia_marca }}",
+              "type": "boolean"
+            },
+            {
+              "id": "c38e7f51-1f6b-46e1-a4c0-83e2916b7710",
+              "name": "session_id",
+              "value": "={{ $json.body.session_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -256,
+        1184
+      ],
+      "id": "0fa2fbd7-728e-4135-80c7-cce128e0a813",
+      "name": "⚙️ Extrair Campos"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Produto: {{ $json.descricao }}\nMarca: {{ $json.marca }} ({{ $json.preferencia_marca ? 'TEM PREFERENCIA PELA MARCA' : '' }})",
+        "options": {
+          "systemMessage": "=# Prompt — Ana, Assistente Virtual da Art Pel\n\n## Identidade\nVocê é a **Ana**, assistente virtual da **Papelaria Art Pel**, especializada em consulta de estoque,\npreços e serviços da loja.\nSeu tom é **simpático, objetivo e prestativo** — como uma atendente experiente que realmente quer ajudar o\ncliente a encontrar o que precisa, sem rodeios e sem informações inventadas.\n\n---\n\n## Missão\nAjudar o cliente a encontrar produtos disponíveis no estoque com rapidez e precisão, consultando sempre a\nferramenta de estoque antes de qualquer resposta sobre produtos. Para dúvidas sobre serviços (como xerox e\nimpressão), responda diretamente com base nas informações abaixo.\n\n---\n\n## Serviços Disponíveis\n\n### 🖨️ Xerox e Impressão\n- Serviço disponível nas **duas unidades** da Art Pel.\n- Impressão e xerox apenas em **preto e branco**.\n- Valor: **R$ 2,00 por folha** (impressão ou cópia).\n\n> Exemplo de resposta quando o cliente perguntar sobre xerox ou impressão:\n>\n> \"Sim! Temos serviço de xerox e impressão nas duas lojas. Fazemos apenas em preto e branco,\n> por **R$ 2,00 a folha**. É só passar por uma de nossas unidades! 😊\n> Posso te ajudar com mais alguma coisa?\"\n\n---\n\n## Estrutura dos Dados de Estoque\nCada registro possui os seguintes campos:\n| Campo | Descrição |\n|---|---|\n| Filial | Unidade da loja |\n| Código Produto | Identificador interno |\n| Código de Barras | EAN/código de barras |\n| Descrição do Produto | Nome completo do produto |\n| Marca | Fabricante/marca |\n| Qtd. Estoque | Quantidade disponível |\n| Preço de venda | Preço atual em R$ |\n| Grupo | Categoria principal |\n| Sub-Grupo | Subcategoria (quando disponível) |\n\n> ⚠️ **Considere apenas produtos com `Qtd. Estoque > 0`.**\n\n---\n\n## Regras de Consulta\n\n### Uso da ferramenta\n- Sempre consulte a ferramenta `estoque` antes de responder sobre produtos.\n- Nunca invente dados, preços ou disponibilidade.\n\n### Identificando o tipo de busca\nDetermine o tipo de busca com base na mensagem do cliente:\n\n| Tipo | Quando usar | Campos consultados |\n|---|---|---|\n| **Por produto específico** | Cliente informa marca e/ou descrição exata | Marca + Descrição |\n| **Por categoria** | Cliente pergunta por tipo/grupo de produto | Grupo + Sub-Grupo |\n| **Mista** | Cliente informa marca dentro de uma categoria | Grupo + Marca + Descrição |\n\n### Busca por produto específico\n1. Procure primeiro na **coluna Marca**.\n2. Se não encontrar pela marca, verifique se o nome aparece na **Descrição do Produto**.\n3. Retorne apenas correspondências **exatas** (mesma marca e descrição informadas).\n\n### Busca por categoria (Grupo / Sub-Grupo)\n1. Identifique o Grupo correspondente ao que o cliente pediu.\n   - Ex.: \"caderno\", \"cadernos\" → Grupo `Cadernos`\n   - Ex.: \"caneta hidrográfica\" → Grupo `Canetas Hidrográficas`\n   - Ex.: \"tinta para pintura\" → Grupo `Tintas`\n2. Filtre todos os produtos desse Grupo com estoque disponível.\n3. Aplique a seleção e ordenação abaixo.\n\n---\n\n## Seleção e Ordenação de Produtos\n\n### Para buscas com correspondência exata (produto específico)\nRetorne **até 3 opções**, nesta ordem:\n| Posição | Critério |\n|---|---|\n| 1ª opção | Produto de **menor preço** |\n| 2ª opção | Produto com preço **mais próximo da média** entre o menor e o maior |\n| 3ª opção | Produto de **maior preço** |\n\n> Se houver menos de 3 produtos, retorne apenas os existentes (do menor para o maior preço).\n\n### Para buscas por categoria (Grupo)\nRetorne **até 5 opções** que representem a variedade do grupo, priorizando:\n1. Produtos de **marcas diferentes** (quando possível)\n2. **Faixa de preço variada** (incluindo opções acessíveis e premium)\n3. **Descrições distintas** (evite repetir o mesmo produto em versões muito similares)\n\n---\n\n## Formato das Respostas\n\n### Produto específico encontrado\n```\nEncontrei opções de [nome do produto] para você!\n\n1. [DESCRIÇÃO COMPLETA] — R$ [menor preço]\n2. [DESCRIÇÃO COMPLETA] — R$ [preço intermediário]\n3. [DESCRIÇÃO COMPLETA] — R$ [maior preço]\n\nPosso te ajudar com mais alguma coisa?\n```\n\n**Exemplo:**\n> Encontrei opções de caderno universitário Tilibra para você!\n>\n> 1. CAD CD 20X1 CONNECT 320 FLS WEST VILLAGE TILIBRA — R$ 18,90\n> 2. CAD CD 20X1 320 FLS PEPPER FEM TILIBRA — R$ 56,90\n> 3. CAD CD 20X1 320 FLS LUNIX TILIBRA — R$ 99,90\n>\n> Posso te ajudar com mais alguma coisa?\n\n---\n\n### Busca por categoria encontrada\n```\nTemos [X] opções de [categoria] disponíveis! Aqui estão alguns destaques:\n\n1. [DESCRIÇÃO COMPLETA] ([MARCA]) — R$ [preço]\n2. [DESCRIÇÃO COMPLETA] ([MARCA]) — R$ [preço]\n3. [DESCRIÇÃO COMPLETA] ([MARCA]) — R$ [preço]\n...\n\nQuer que eu filtre por marca, faixa de preço ou alguma característica específica?\n```\n\n---\n\n### Produto não encontrado\n```\nSe não encontrar o produto, indique outro produto similar.\n```\n\n---\n\n## Regras Inegociáveis\n- Consulte o estoque antes de qualquer resposta sobre produtos.\n- Exiba apenas produtos com **Qtd. Estoque > 0**.\n- Nunca invente produtos, preços ou disponibilidade.\n- Para busca exata: retorne apenas correspondências exatas — nunca sugira similares.\n- Para busca por categoria: represente a variedade real do estoque disponível.\n- Para perguntas sobre **serviços** (xerox, impressão): responda diretamente, sem consultar o estoque.\n- Seja sempre breve, claro e cordial."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        128,
+        1184
+      ],
+      "id": "4e93d7db-2c24-492e-9497-9ad7f9d6a3c4",
+      "name": "🤖 Ana - Assistente"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -32,
+        1408
+      ],
+      "id": "b19eb353-e158-472d-b540-e447feb52554",
+      "name": "🧠 GPT-4.1 Mini",
+      "credentials": {
+        "openAiApi": {
+          "name": "<openAiApi>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.session_id }}",
+        "contextWindowLength": 4
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        96,
+        1408
+      ],
+      "id": "ef0d7a1c-84f9-49d9-9930-00897e7686bc",
+      "name": "💬 Histórico Conversa"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "# Tool — Consulta de Estoque · Papelaria Art Pel\n\nUse esta ferramenta para consultar o estoque da Papelaria Art Pel.\n\n---\n\n## Quando utilizar\n\n- Sempre que o cliente perguntar sobre disponibilidade, preço ou descrição de um produto.\n- Nunca responda sobre estoque sem consultar esta ferramenta antes.\n\n---\n\n## Antes de consultar — Interprete a linguagem do cliente\n\nTraduza o que o cliente diz para os termos técnicos do estoque usando as regras abaixo.\n\n### Grupos de produto\n\nMapeie a linguagem informal para o grupo correto:\n\n| O cliente diz...                          | Grupo no estoque              |\n|-------------------------------------------|-------------------------------|\n| caderno, caderninho                       | Cadernos                      |\n| caderno inteligente, CI                   | Caderno Inteligente           |\n| bloco, bloquinho, rascunho                | Blocos                        |\n| agenda, planner                           | Agendas                       |\n| caneta, esferográfica, esferô             | Canetas                       |\n| canetinha, hidrocor, marca texto          | Canetas Hidrográficas         |\n| lápis de escrever, lápis grafite          | Lapis Grafite                 |\n| lápis de cor, lápis colorido              | Lápis de Cor                  |\n| lapiseira, lapiseirinha                   | Lapiseira                     |\n| borracha                                  | Borrachas                     |\n| apontador                                 | Apontadores                   |\n| papel sulfite, sulfite                    | Papel Sulfite / Papel Sulfite A4 |\n| papel especial, papel colorido            | Papel Especial                |\n| pasta, pastinha                           | Pastas                        |\n| pasta sanfonada                           | Pasta Sanfonada               |\n| pasta catálogo, pasta AZ                  | Pasta Catálogo / Indice Az    |\n| fichário, argola                          | Fichários Escolares           |\n| estojo, estojinho                         | Estojos                       |\n| mochila                                   | Mochilas                      |\n| lancheira                                 | Lancheiras                    |\n| régua                                     | Régua                         |\n| compasso                                  | Compassos                     |\n| cola, cola branca, cola bastão            | Colas                         |\n| fita, durex, fita adesiva                 | Durex / Fita Dupla Face / Fita Mágica |\n| tesoura                                   | Tesouras                      |\n| grampeador                                | Grampeadores                  |\n| grampo                                    | Grampos                       |\n| clips, clipes                             | Clipes                        |\n| corretivo, liquid paper, branquinho       | Corretivos                    |\n| giz de cera                               | Giz de Cera                   |\n| giz escolar, gizão                        | Giz Escolar / Gizão de Cera   |\n| tinta guache                              | Guaches                       |\n| tinta acrílica                            | Tintas                        |\n| aquarela                                  | Aquarelas                     |\n| pincel                                    | Pincel Para Pintura           |\n| argila, massa de modelar                  | Argilas / Massa de Modelar    |\n| EVA, placa EVA                            | Placa EVA                     |\n| carimbo                                   | Carimbos                      |\n| calculadora                               | Calculadoras                  |\n| pen drive, pendrive                       | Pendrive                      |\n| post-it, bloco adesivo                    | Post-It                       |\n| washi tape                                | Washi Tape                    |\n| papel contact, contact                    | Contact                       |\n\n---\n\n### Prefixos de tipo de produto\n\n| Abreviação | Significado        |\n|------------|--------------------|\n| CAD        | Caderno            |\n| BLO        | Bloco de notas     |\n| AGD        | Agenda             |\n| EST        | Estojo             |\n| LP         | Lápis              |\n| CAN        | Caneta             |\n| BOR        | Borracha           |\n| APT        | Apontador          |\n| MOC        | Mochila            |\n| REG        | Régua              |\n| PAP        | Papel / Pasta      |\n| PST        | Pasta              |\n\n---\n\n### Especificações de caderno\n\nReconstrua a descrição técnica a partir do que o cliente mencionar.\n\n**Capa**\n\n| Abreviação | Significado     |\n|------------|-----------------|\n| CD         | Capa Dura       |\n| CM         | Capa Mole       |\n| CF         | Capa Flexível   |\n\n**Número de matérias**\n\n| Abreviação     | Significado  |\n|----------------|--------------|\n| 1X1 / 1M       | 1 matéria    |\n| 5X1 / 5M       | 5 matérias   |\n| 10X1 / 10M     | 10 matérias  |\n| 12X1 / 12M     | 12 matérias  |\n| 15X1 / 15M     | 15 matérias  |\n| 20X1 / 20M     | 20 matérias  |\n\n**Formato**\n\n| Termo                   | Significado                        |\n|-------------------------|------------------------------------|\n| UNIVERSITÁRIO / UNIV    | Formato padrão (200×275 mm aprox.) |\n| BROCHURA                | Caderno pequeno, capa flexível     |\n| BROCHURÃO               | Brochura em formato maior          |\n| 1/4                     | Formato caderneta de bolso         |\n| A4                      | 210×297 mm                         |\n| A5                      | 148×210 mm                         |\n\n**Encadernação**\n\n| Termo        | Significado                              |\n|--------------|------------------------------------------|\n| ESPIRAL / ESP | Espiral simples                         |\n| WIRE-O       | Espiral metálico duplo (mais resistente) |\n| COLADO       | Miolo colado na capa (brochura)          |\n| DISCO        | Sistema de discos removíveis (CI)        |\n\n**Folhas**\n\n| Abreviação | Significado                        |\n|------------|------------------------------------|\n| FLS        | Folhas                             |\n| PAUT       | Pautado (linhas horizontais)       |\n| QUAD       | Quadriculado                       |\n| LISO       | Liso (sem pauta)                   |\n| MILIM      | Milimetrado                        |\n| g / g/m²   | Gramatura (ex: 75g, 90g, 120g)     |\n\n> **Exemplo:** cliente pede *\"caderno capa dura de 20 matérias, 320 folhas\"* → buscar `CAD CD 20X1 320FLS`\n\n---\n\n### Canetas\n\n| Abreviação       | Significado                          |\n|------------------|--------------------------------------|\n| ESF              | Esferográfica                        |\n| GEL              | Caneta gel                           |\n| HID              | Hidrográfica / Hidrocor / Canetinha  |\n| MT / MARCA TEXTO | Marca-texto                          |\n| PINCEL / PINCA   | Pincel marcador (Posca, brush pen)   |\n| MM               | Espessura da ponta (ex: 0.5mm, 1.0mm)|\n\n---\n\n### Lápis — Dureza do grafite\n\n| Marcação    | Uso                         |\n|-------------|-----------------------------|\n| HB          | Médio — uso escolar padrão  |\n| B, 2B, 4B   | Macio — desenho artístico   |\n| H, 2H, 3H   | Duro — desenho técnico      |\n\n---\n\n### Cores\n\n| Abreviação | Cor     |\n|------------|---------|\n| AZ         | Azul    |\n| VM         | Vermelho|\n| VD         | Verde   |\n| AM         | Amarelo |\n| RS / ROSA  | Rosa    |\n| PT / PTO   | Preto   |\n| BC / BRAN  | Branco  |\n| LJ         | Laranja |\n| CZ         | Cinza   |\n| LX         | Lilás   |\n| MS         | Marrom  |\n\n---\n\n### Unidades de venda\n\n| Abreviação     | Significado                   |\n|----------------|-------------------------------|\n| UND / UN       | Unidade                       |\n| PCT            | Pacote                        |\n| CX             | Caixa                         |\n| CJ             | Conjunto                      |\n| BL / BLIST     | Blister                       |\n| DZ             | Dúzia                         |\n\n---\n\n## Como consultar\n\n- Use a marca e a descrição técnica reconstruída como termos de busca.\n- Se a busca por marca não retornar resultado, tente localizar o nome da marca dentro da descrição do produto.\n- Se a primeira busca não retornar resultado, tente variações de abreviação para o mesmo conceito (ex: `1M` e `1X1` são equivalentes).\n\n---\n\n## O que fazer com o resultado\n\n- Filtre apenas os produtos com correspondência exata de marca e descrição.\n- Ignore produtos similares ou aproximados.\n- Ordene os resultados do **menor para o maior preço** antes de retornar ao cliente.\n\n---\n\n## Se não houver resultado compatível\n\nInforme outro produto que está disponível",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "topK": 5,
+        "options": {
+          "queryName": "match_document"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        1408
+      ],
+      "id": "f7e0f0a4-2b9b-4be6-a6f5-84fe8f42ff4d",
+      "name": "🔍 Buscar no Estoque",
+      "credentials": {
+        "supabaseApi": {
+          "name": "<supabaseApi>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        304,
+        1616
+      ],
+      "id": "21e47e0d-0742-4c8e-9a3f-844c80bcf6c9",
+      "name": "🔢 Gerar Embeddings1",
+      "credentials": {
+        "openAiApi": {
+          "name": "<openAiApi>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "id": "13d11a5d-6211-4a81-9a66-05f28c5a51a2",
+      "name": "📤 Enviar Resposta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        720,
+        1184
+      ]
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        864,
+        304
+      ],
+      "id": "978ed469-bf56-4fc1-a91a-9c222af7fcd2",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -480,
+        496
+      ],
+      "id": "33b34d15-cd95-411d-8bac-e340d86b3dfd",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT e.* FROM estoque e\nINNER JOIN sync_fila sf ON sf.codigo_produto = e.codigo_produto::text\nWHERE e.qtd_estoque != '0'\nLIMIT 500;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        192,
+        400
+      ],
+      "id": "c2be4d0d-1dab-40b2-be96-66777223a9a0",
+      "name": "buscar página",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "name": "<postgres>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8d587007-eed1-4fd2-9323-2c2fa1737b69",
+              "leftValue": "={{ $json.codigo_produto }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        400
+      ],
+      "id": "5d5558dd-cbb2-4811-8e3d-9317473cf0dc",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        352
+      ],
+      "id": "0194760f-f203-4ed6-a906-2197c8fc386d",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM sync_fila\nWHERE codigo_produto IN (\n  SELECT sf.codigo_produto \n  FROM sync_fila sf\n  INNER JOIN estoque_vetores ev \n    ON ev.metadata->'metadata'->>'codigo_produto' = sf.codigo_produto\n);\n\nSELECT 1 AS ok;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1152,
+        352
+      ],
+      "id": "23e649df-8f16-4e80-926b-091fd294b1fb",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "name": "<postgres>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e5237329-223b-433e-b5a4-ebfb0bd83893",
+              "leftValue": "={{ $json.Hour }}",
+              "rightValue": 8,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "d73d29c4-8283-4fa4-ac0e-117028d6ba97",
+              "leftValue": "={{ $json.Hour }}",
+              "rightValue": 21,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -256,
+        496
+      ],
+      "id": "5248a239-2cab-46ee-b43e-37d8d8c27b4f",
+      "name": "If1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        592
+      ],
+      "id": "334cba98-9c05-4cb2-9f54-4763e00fe73e",
+      "name": "No Operation, do nothing2"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        512,
+        1408
+      ],
+      "id": "758d34bd-7f11-4e52-bbdd-a8800f013586",
+      "name": "Think"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        1280
+      ],
+      "id": "7230a1d0-9fab-456f-84f4-7893ee86c068",
+      "name": "When clicking ‘Execute workflow’"
+    }
+  ],
+  "connections": {
+    "🗑️ Remover Alterados": {
+      "main": [
+        [
+          {
+            "node": "buscar página",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Formatar Produtos": {
+      "main": [
+        [
+          {
+            "node": "🔁 Loop Lotes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔁 Loop Lotes": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "🧠 Indexar Vetores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🧠 Indexar Vetores": {
+      "main": [
+        [
+          {
+            "node": "🔁 Loop Lotes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔢 Gerar Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "🧠 Indexar Vetores",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📄 Carregar Documento": {
+      "ai_document": [
+        [
+          {
+            "node": "🧠 Indexar Vetores",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📥 Receber Consulta": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Extrair Campos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Extrair Campos": {
+      "main": [
+        [
+          {
+            "node": "🤖 Ana - Assistente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 Ana - Assistente": {
+      "main": [
+        [
+          {
+            "node": "📤 Enviar Resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🧠 GPT-4.1 Mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "🤖 Ana - Assistente",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💬 Histórico Conversa": {
+      "ai_memory": [
+        [
+          {
+            "node": "🤖 Ana - Assistente",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Buscar no Estoque": {
+      "ai_tool": [
+        [
+          {
+            "node": "🤖 Ana - Assistente",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔢 Gerar Embeddings1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "🔍 Buscar no Estoque",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✅ Atualizar Sync": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar página": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Formatar Produtos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "✅ Atualizar Sync",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "🗑️ Remover Alterados",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "🤖 Ana - Assistente",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Extrair Campos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "America/Sao_Paulo",
+    "callerPolicy": "workflowsFromSameOwner"
+  }
+}

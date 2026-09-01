@@ -1,0 +1,826 @@
+{
+  "name": "Lista FUP | ROMA",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bec7fcdf-7397-419f-9e0b-c071084c871a",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -96,
+        -592
+      ],
+      "id": "f64e2467-0c67-4a3b-813d-9af38b272c47",
+      "name": "Add Lista",
+      "webhookId": "",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "0f12ac62-f04f-4782-b1e1-8601ec2e08f6",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -96,
+        -288
+      ],
+      "id": "5779754c-1c67-4f3f-be35-82d50aa57411",
+      "name": "Remove Lista",
+      "webhookId": "",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "LISTA",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "numero": "={{ $('Add Lista').item.json.body.numero }}",
+            "data": "={{ \n(() => {\n  const d = new Date();\n  return d.toLocaleDateString('pt-BR');\n})()\n}}",
+            "nome": "={{ $('Add Lista').item.json.body.nome }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "nome",
+              "displayName": "nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "numero",
+              "displayName": "numero",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        528,
+        -512
+      ],
+      "id": "413e0e4d-3ed9-4627-b1c2-7e12e9e9be6f",
+      "name": "Add na lista",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "LISTA",
+          "cachedResultUrl": ""
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        96,
+        320
+      ],
+      "id": "7ae3672d-9ad0-4c7e-afd0-1ff8aa7b812a",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Wd55xwd8tB0IvRAp",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "FUP 7d"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        320
+      ],
+      "name": "7d",
+      "id": "3755be0c-971e-4b11-8185-ede9a832bfc7"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "nlXmDri6q2IGTycU",
+          "mode": "list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        496
+      ],
+      "name": "10d",
+      "id": "2bc717cf-2d5d-426a-a7d1-c4cdeeee3f71"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "1GeuEFqa4CyQxJz7",
+          "mode": "list",
+          "cachedResultUrl": "",
+          "cachedResultName": "FUP 15d"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        672
+      ],
+      "name": "15d",
+      "id": "a66aa038-72ed-41ec-82c2-9f03f5e02348"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 11
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -96,
+        320
+      ],
+      "id": "299bf096-0d9c-4bee-ba5b-e7722ddc80b3",
+      "name": "11 AM"
+    },
+    {
+      "parameters": {
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "LISTA",
+          "cachedResultUrl": ""
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        96,
+        496
+      ],
+      "id": "e99c1427-2a74-4518-a267-100bf1f2e711",
+      "name": "Get row(s) in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "LISTA",
+          "cachedResultUrl": ""
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        96,
+        672
+      ],
+      "id": "19a3728c-f317-48c4-99c7-d2fe940bc4a3",
+      "name": "Get row(s) in sheet2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 13
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -96,
+        672
+      ],
+      "id": "d469da14-fef5-45c4-ac8d-09c63fc251e1",
+      "name": "1 PM"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 12
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -96,
+        496
+      ],
+      "id": "88b9e1fe-e7fa-49ed-a7fd-290e7bb9bf7a",
+      "name": "NOON"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "74314625-4fed-43de-b7db-448202518f48",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -96,
+        32
+      ],
+      "id": "a71b1af5-0a6b-4d2d-a610-b6be67408dbd",
+      "name": "Remove lista (transferência)",
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "LISTA",
+          "cachedResultUrl": ""
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "numero",
+              "lookupValue": "={{ $json.body.numero }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        112,
+        -592
+      ],
+      "id": "b3d14c83-aa6c-4ca8-9f03-02fc55045403",
+      "name": "Procura n° na lista",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "LISTA",
+          "cachedResultUrl": ""
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "numero",
+              "lookupValue": "={{ $json.body.numero }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        112,
+        -288
+      ],
+      "id": "1e9ee7d4-cfd7-4090-827c-2c978069fe13",
+      "name": "Procura n° na lista1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "LISTA",
+          "cachedResultUrl": ""
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "numero",
+              "lookupValue": "={{ \n(() => {\n  let celular = String($json.body.recipient);\n\n  if (!celular) return null;\n\n  // Remove tudo que não for número\n  let numeros = celular.replace(/\\D/g, '');\n\n  // Remove código do país caso venha junto\n  if (numeros.startsWith('55')) {\n    numeros = numeros.slice(2);\n  }\n\n  // Extrai DDD\n  const ddd = numeros.slice(0, 2);\n  let numero = numeros.slice(2);\n\n  // Se número tiver 8 dígitos (fixo ou celular antigo), adiciona o 9\n  if (numero.length === 8) {\n    numero = '9' + numero;\n  }\n\n  // Se tiver 9 dígitos mas não começar com 9, adiciona\n  if (numero.length === 9 && !numero.startsWith('9')) {\n    numero = '9' + numero.slice(1);\n  }\n\n  // Retorno final\n  return `55${ddd}${numero}`;\n})()\n}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        112,
+        32
+      ],
+      "id": "248a12b2-5af7-4659-a2a1-be8c9596c389",
+      "name": "Procura n° na lista2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f8f7d007-3fed-48bf-ad4c-1b67083fc2f6",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        320,
+        32
+      ],
+      "id": "19ffa31e-6dfd-4801-a9ba-1cf400b0c5a6",
+      "name": "IF"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "LISTA",
+          "cachedResultUrl": ""
+        },
+        "startIndex": "={{ $('Procura n° na lista2').item.json.row_number }}"
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        528,
+        -48
+      ],
+      "id": "705cee79-6436-42cb-b92b-c1b94bb4bbe8",
+      "name": "REMOVE",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f8f7d007-3fed-48bf-ad4c-1b67083fc2f6",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        320,
+        -288
+      ],
+      "id": "98a96ac6-0843-4f2c-9fa2-b4d31ea971eb",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f8f7d007-3fed-48bf-ad4c-1b67083fc2f6",
+              "leftValue": "={{ $json.row_number }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        320,
+        -592
+      ],
+      "id": "c8b32e83-f0b6-4467-8cef-5e428c200376",
+      "name": "if"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "LISTA",
+          "cachedResultUrl": ""
+        },
+        "startIndex": "={{ $json.row_number }}"
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        528,
+        -368
+      ],
+      "id": "e5eeb0cd-a22d-481f-a716-b965e91e4adf",
+      "name": "REM0VE",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        528,
+        -192
+      ],
+      "id": "54282d71-e9d9-4cb9-9cf3-6de7d64587f7",
+      "name": "FAZ NADA"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        528,
+        -688
+      ],
+      "id": "7bf582ab-e622-40c7-932b-3c35298c3ea6",
+      "name": "Faz nada"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        528,
+        128
+      ],
+      "id": "bb710f6b-9921-49da-87f1-637a27d7ad7e",
+      "name": "Faz Nada"
+    }
+  ],
+  "connections": {
+    "Add Lista": {
+      "main": [
+        [
+          {
+            "node": "Procura n° na lista",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Lista": {
+      "main": [
+        [
+          {
+            "node": "Procura n° na lista1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "7d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11 AM": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "10d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet2": {
+      "main": [
+        [
+          {
+            "node": "15d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1 PM": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NOON": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove lista (transferência)": {
+      "main": [
+        [
+          {
+            "node": "Procura n° na lista2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procura n° na lista": {
+      "main": [
+        [
+          {
+            "node": "if",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procura n° na lista1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procura n° na lista2": {
+      "main": [
+        [
+          {
+            "node": "IF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF": {
+      "main": [
+        [
+          {
+            "node": "REMOVE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Faz Nada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "REM0VE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FAZ NADA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if": {
+      "main": [
+        [
+          {
+            "node": "Faz nada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add na lista",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  }
+}

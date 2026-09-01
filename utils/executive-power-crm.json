@@ -1,0 +1,514 @@
+{
+  "name": "Executive | Atualiza Lista Power CRM",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        224
+      ],
+      "id": "279974f1-08d7-4aa2-8e96-eb9c984b3d89",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.powercrm.com.br/api/report/db",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "from",
+              "value": "={{ \n(() => {\n  const d = new Date();\n  d.setDate(d.getDate() - 160);\n  return d.toISOString().slice(0, 10);\n})()\n}}"
+            },
+            {
+              "name": "to",
+              "value": "={{ \n(() => {\n  const d = new Date();\n  d.setDate(d.getDate() - 80);\n  return d.toISOString().slice(0, 10);\n})()\n}}"
+            },
+            {
+              "name": "stringFilterTypeDate",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        224,
+        224
+      ],
+      "id": "bc23a7c4-cbcb-47a4-8ee8-1650ac10f40f",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "<httpBearerAuth>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ff93da0c-eb95-4b34-9609-2ed11993ddba",
+              "leftValue": "={{ $json.dateQuotationAcceptance }}",
+              "rightValue": "={{null}}",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "ab05d8a9-e241-405f-adf1-639353ca6af0",
+              "leftValue": "={{ $json.isShelved }}",
+              "rightValue": "N",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "a568475e-0fe3-4250-8613-aac3827d6744",
+              "leftValue": "={{ $json.cardStatus }}",
+              "rightValue": "2",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "1636b4a1-4bfb-40e2-87e3-1c0614ab463b",
+              "leftValue": "={{ $json.vehicleModel }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "7ea95e72-4bc4-42bd-a4ad-9006d9d9f0be",
+              "leftValue": "={{ $json.vehicleModel }}",
+              "rightValue": "N/I",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        -16
+      ],
+      "id": "f32bc7a1-81e3-42f5-b4fa-66299b0e7d02",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        448,
+        224
+      ],
+      "id": "8cae2156-9685-406c-a717-bc959c6a5d85",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -208
+      ],
+      "id": "af431626-18c2-49b9-84a2-0e85fa50376e",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "amount": 7
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1568,
+        64
+      ],
+      "id": "f3d38c32-aa0b-4659-bdb7-725712c97100",
+      "name": "Wait",
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": 254439543,
+          "mode": "list",
+          "cachedResultName": "Lista",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "CLIENTE": "={{ $('Loop Over Items').item.json.clientName }}",
+            "CREATION DATE": "={{ $('Loop Over Items').item.json.createdDate }}",
+            "TELEFONE 1": "={{ $('Loop Over Items').item.json.clientPhone }}",
+            "TELEFONE 2": "={{ $('Loop Over Items').item.json.clientMobile }}",
+            "MODELO": "={{ $('Loop Over Items').item.json.vehicleModel }}",
+            "quotationCode": "={{ $('Loop Over Items').item.json.quotationCode }}",
+            "CARD _STATUS": "={{ $('Loop Over Items').item.json.cardStatus }}",
+            "IS_SHELVED": "={{ $('Loop Over Items').item.json.isShelved }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "CLIENTE",
+              "displayName": "CLIENTE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TELEFONE 1",
+              "displayName": "TELEFONE 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TELEFONE 2",
+              "displayName": "TELEFONE 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "quotationCode",
+              "displayName": "quotationCode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "MODELO",
+              "displayName": "MODELO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CARD _STATUS",
+              "displayName": "CARD _STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "IS_SHELVED",
+              "displayName": "IS_SHELVED",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CREATION DATE",
+              "displayName": "CREATION DATE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "STATUS",
+              "displayName": "STATUS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Nome",
+              "displayName": "Nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1344,
+        -112
+      ],
+      "id": "130e6b07-1ada-4b80-b3d3-529803911992",
+      "name": "ADICIONA",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c8489e46-a7d7-47ea-9f70-af241e91b0dc",
+              "leftValue": "={{ $json.row_number }}",
+              "rightValue": "={{ $('If').item.json.clientMobile }}",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        -16
+      ],
+      "id": "9e7e9448-789b-4eca-a66b-3892e235363a",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "documentId": "GOOGLE_SHEET_ID",
+        "sheetName": {
+          "__rl": true,
+          "value": 254439543,
+          "mode": "list",
+          "cachedResultName": "Lista",
+          "cachedResultUrl": ""
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "TELEFONE 2",
+              "lookupValue": "={{ $('Loop Over Items').item.json.clientMobile }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        -16
+      ],
+      "id": "8b17d08e-845b-4f5b-90b7-d7fdee4fae90",
+      "name": "Leads Existentes",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "<googleSheetsOAuth2Api>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 7
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1344,
+        80
+      ],
+      "id": "3df79d27-ddbb-4eab-b5f2-45318a9ebec8",
+      "name": "Wait1",
+      "webhookId": ""
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Leads Existentes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ADICIONA": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ADICIONA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leads Existentes": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}

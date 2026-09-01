@@ -1,0 +1,859 @@
+{
+  "name": "VITALE | GPTMaker -> 4Medic (Horarios + Agendar + Cancelar)",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "0a89a434-4a5c-4a99-ad19-5499a3b73e68",
+              "leftValue": "={{ $json.medico }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "755ab59e-d3c3-4c81-a0f8-362255703302",
+              "leftValue": "={{ $json.data }}",
+              "rightValue": "",
+              "operator": {
+                "type": "dateTime",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "7ab7d2d6-93e0-427d-b393-340d1b8a1b0c",
+      "name": "Validar campos (horários)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.4medic.com.br/api/v1/agenda/search-horarios",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "cpf_profissional",
+              "value": "={{ $('Padroniza Ação Horários').item.json.cpf_profissional }}"
+            },
+            {
+              "name": "data_inicio",
+              "value": "={{ $('Padroniza Ação Horários').item.json.data_br }}"
+            },
+            {
+              "name": "data_fim",
+              "value": "={{ $('Padroniza Ação Horários').item.json.data_br }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.API_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d9e66c3c-7a47-4a5f-8979-f9c7dec0578c",
+      "name": "4Medic | Horários disponíveis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -160,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "94eb9c1c-b4f2-474e-b0a6-b98f1a945620",
+              "leftValue": "={{ $json.medico_nome_oficial }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "5fee731a-de3d-4d86-b725-b2b672fe2a64",
+              "leftValue": "={{ $json.data_br }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "84b6650f-6332-46d9-b8b3-25801c8e6187",
+              "leftValue": "={{ $json.paciente.cpf }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "f119a65a-354d-4425-a4ba-b4db2c40d0e1",
+              "leftValue": "={{ $json.hora }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "1d948be2-cb8e-4ee6-b297-f19ad45f5625",
+              "leftValue": "={{ $json.paciente.genero }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "dccfde1d-ff32-439e-af41-9517699eae87",
+      "name": "Validar campos (agendar)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.acao }}",
+                    "rightValue": "horarios",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "66c0e789-1510-439e-a8d4-da65f7deb372"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Consultar Horários"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b73dc1c9-d3fd-4a46-9fa0-ac0338216e33",
+                    "leftValue": "={{ $json.body.acao }}",
+                    "rightValue": "agendar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Agendar Consulta"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a27d36af-fd43-44a1-bf08-d15a0bf97797",
+                    "leftValue": "={{ $json.body.acao }}",
+                    "rightValue": "cancelar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Cancelar Consulta"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -832,
+        384
+      ],
+      "id": "2c6f13b2-0ecd-4d30-a0a9-305ffb548a3d",
+      "name": "Switch (ação)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const resposta = $json;\n\n// A API retornou como array\nconst objetoData = Array.isArray(resposta) ? resposta[0] : resposta;\n\nconst dataKey = Object.keys(objetoData || {})[0];\nconst lista = objetoData[dataKey] || [];\n\n// Filtra só horários disponíveis\nconst horariosDisponiveis = lista\n  .filter(item => item.status === \"Y\")\n  .map(item => item.time);\n\n// Montar mensagem amigável\nlet mensagem;\n\nif (horariosDisponiveis.length === 0) {\n  mensagem = \"No momento não há horários disponíveis para essa data. Gostaria de verificar outra data?\";\n} else {\n  mensagem = `Esses são horários disponíveis para essa data: ${horariosDisponiveis.join(\", \")}.`;\n}\n\nreturn [{\n  status: \"sucesso\",\n  acao: \"horarios\",\n  data: dataKey,\n  horarios_disponiveis: horariosDisponiveis,\n  mensagem\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        112
+      ],
+      "id": "f6289f27-5598-4f0e-bbd3-53e7557a9b0d",
+      "name": "Mensagem Horários"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "c1308744-a74b-46e9-9bef-b720301edd21",
+      "name": "Retorna Horários",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        288,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.4medic.com.br/api/v1/paciente/{{ $('Validar campos (agendar)').item.json.paciente.cpf }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.API_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "18b843b6-f6a6-42e2-a37f-a5d97680442d",
+      "name": "4Medic | GET paciente por CPF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        512,
+        400
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.4medic.com.br/api/v1/paciente/new",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.API_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"paciente_cpf\": \"{{ $('Validar campos (agendar)').item.json.paciente.cpf }}\",\n  \"paciente_nome\": \"{{ $('Validar campos (agendar)').item.json.paciente.nome }}\",\n  \"paciente_genero\": \"{{ $('Validar campos (agendar)').item.json.paciente.genero }}\",\n  \"paciente_data_nascimento\": \"{{ $('Validar campos (agendar)').item.json.paciente.data_nascimento }}\",\n  \"paciente_convenio\": {\n    \"convenio_id\": \"{{ $('Valida Convênio').item.json.id_convenio }}\",\n    \"convenio_nome\": \"{{ $('Valida Convênio').item.json.convenio_nome_oficial }}\",\n    \"convenio_carteirinha_numero\": \"{{ $('Validar campos (agendar)').item.json.paciente.numero_carteirinha }}\",\n    \"convenio_carteirinha_validade\": \"\"\n  },\n  \"paciente_cns\": \"\",\n  \"paciente_rg\": \"\",\n  \"paciente_rg_orgao_expeditor\": \"\",\n  \"paciente_celular\": \"\",\n  \"paciente_telefone\": \"{{ $('Validar campos (agendar)').item.json.paciente.telefone }}\",\n  \"paciente_email\": \"{{ $('Validar campos (agendar)').item.json.paciente.email }}\",\n  \"paciente_cep\": \"\",\n  \"paciente_endereco\": \"\",\n  \"paciente_endereco_numero\": \"\",\n  \"paciente_endereco_complemento\": \"\",\n  \"paciente_endereco_bairro\": \"\",\n  \"paciente_endereco_cidade\": \"\",\n  \"paciente_endereco_uf\": \"\",\n  \"paciente_observacao\": \"\",\n  \"paciente_falecido\": \"\",\n  \"paciente_naturalidade\": \"\",\n  \"paciente_nacionalidade\": \"\",\n  \"paciente_estado_civil\": \"\",\n  \"paciente_profissao\": \"\",\n  \"paciente_codigo_cadastro\": \"\"\n}",
+        "options": {}
+      },
+      "id": "152853d7-6a76-44db-b476-6a7ba0dbbcaf",
+      "name": "4Medic | POST criar paciente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        960,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "5bf40f6d-6600-4286-8a45-9279be7b802d",
+              "leftValue": "={{ $json.error.status }}",
+              "rightValue": 404,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b8c140b0-20b7-4936-ab10-86a1e0596343",
+      "name": "Verifica Paciente",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        736,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.4medic.com.br/api/v1/agenda/new",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.API_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data_agendamento\": \"{{ $('Validar campos (agendar)').first().json.data_br }}\",\n  \"hora_inicial\": \"{{ $('Validar campos (agendar)').first().json.hora }}\",\n  \"hora_final\": \"\",\n  \"cpf_profissional\": \"{{$('Validar campos (agendar)').first().json.cpf_profissional}}\",\n  \"cpf_paciente\": \"{{ $('Validar campos (agendar)').first().json.paciente.cpf }}\",\n  \"observacao\": \"Agendado via IA\",\n  \"procedimentos\": [\n    {\n      \"id_procedimento\": 2,\n      \"id_convenio\": {{ $('Valida Convênio').first().json.id_convenio }},\n      \"numero_carteirinha_convenio\": \"{{$('Validar campos (agendar)').first().json.paciente.numero_carteirinha}}\",\n      \"valor_procedimento\": {{ $('Padroniza Ação Agendar').first().json.valor_consulta }}\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "e68888d4-5fa3-40df-bf5b-700a30643192",
+      "name": "4Medic | POST cadastrar agendamento",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1184,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.4medic.com.br/api/v1/convenios",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.API_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "de899491-7f94-424f-aa65-79441b762bcc",
+      "name": "4Medic | GET convenios",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -160,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ad831fda-00ca-441a-a157-2473ebd163e2",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        288,
+        496
+      ],
+      "id": "221193f7-939f-4b06-a0fc-72a013e63e80",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega todos os itens vindos do GET /convenios\nconst items = $input.all();\n\n// Se veio como vários itens separados\nlet lista = items.map(i => i.json);\n\n// Se veio como 1 item contendo array\nif (lista.length === 1 && Array.isArray(lista[0])) {\n  lista = lista[0];\n}\n\n// Pega o convênio informado no node Validar campos\nconst nomeInputRaw = $('Validar campos (agendar)').first().json.paciente?.convenio || \"\";\n\nconst nomeInput = nomeInputRaw\n  .normalize(\"NFD\")\n  .replace(/[\\u0300-\\u036f]/g, \"\")\n  .toLowerCase()\n  .trim();\n\nif (!nomeInput) {\n  return [{\n    status: \"erro\",\n    mensagem: \"Convênio não informado.\"\n  }];\n}\n\n// Agora sim é seguro usar find\nconst encontrado = lista.find(c => {\n  const nomeApi = (c.convenio_nome || \"\")\n    .normalize(\"NFD\")\n    .replace(/[\\u0300-\\u036f]/g, \"\")\n    .toLowerCase()\n    .trim();\n\n  return nomeApi === nomeInput;\n});\n\nif (!encontrado) {\n  return [{\n    status: \"erro\",\n    mensagem: `Convênio \"${nomeInputRaw}\" não encontrado na clínica.`\n  }];\n}\n\nreturn [{\n  status: \"ok\",\n  id_convenio: encontrado.id_convenio,\n  convenio_nome_oficial: encontrado.convenio_nome\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        496
+      ],
+      "id": "75797e05-0f00-4dc0-b544-9af3591b22d1",
+      "name": "Valida Convênio"
+    },
+    {
+      "parameters": {
+        "jsCode": "function normalizar(texto) {\n  return String(texto || \"\")\n    .normalize(\"NFD\")\n    .replace(/[\\u0300-\\u036f]/g, \"\")\n    .toLowerCase()\n    .trim();\n}\n\nfunction somenteDigitos(valor) {\n  return String(valor || \"\").replace(/\\D/g, \"\");\n}\n\nfunction formatarCPF(cpf) {\n  const d = somenteDigitos(cpf);\n  if (d.length !== 11) return cpf;\n  return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`;\n}\n\nfunction converterData(dataInput) {\n  if (!dataInput) return { iso: null, br: null };\n\n  const data = String(dataInput).trim();\n\n  // Já está ISO YYYY-MM-DD\n  if (/^\\d{4}-\\d{2}-\\d{2}$/.test(data)) {\n    const [ano, mes, dia] = data.split(\"-\");\n    return {\n      iso: data,\n      br: `${dia}/${mes}/${ano}`\n    };\n  }\n\n  // Está DD/MM/YYYY\n  if (/^\\d{2}\\/\\d{2}\\/\\d{4}$/.test(data)) {\n    const [dia, mes, ano] = data.split(\"/\");\n    return {\n      iso: `${ano}-${mes}-${dia}`,\n      br: data\n    };\n  }\n\n  return { iso: null, br: null };\n}\n\nconst input = $json.body || $json;\n\n// ============================\n// MAPEAR MÉDICO\n// ============================\n\nconst medicoInput = input.medico;\nconst medicoNormalizado = normalizar(medicoInput);\n\nconst mapa = [\n  {\n    palavras: [\"yugo\", \"yamazaki\"],\n    cpf: \"000.000.000-00\",\n    nome_oficial: \"Dr. Yugo Yamazaki\"\n  },\n  {\n    palavras: [\"rubens\", \"martins\"],\n    cpf: \"000.000.000-00\",\n    nome_oficial: \"Dr. Rubens Martins Filho\"\n  },\n  {\n    palavras: [\"engler\", \"mori\"],\n    cpf: \"000.000.000-00\",\n    nome_oficial: \"Dr. Engler Mori Ferreira\"\n  },\n  {\n    palavras: [\"luiz\", \"henrique\", \"cunha\"],\n    cpf: \"000.000.000-00\",\n    nome_oficial: \"Dr. Luiz H. Cunha\"\n  }\n];\n\nlet encontrado = mapa.find(item =>\n  item.palavras.some(p => medicoNormalizado.includes(p))\n);\n\nlet cpf_profissional = null;\nlet medico_nome_oficial = null;\n\nif (encontrado) {\n  cpf_profissional = encontrado.cpf;\n  medico_nome_oficial = encontrado.nome_oficial;\n}\n\n// ============================\n// PADRONIZAR DATA\n// ============================\n\nconst dataConvertida = converterData(input.data);\n\n// ============================\n// RETORNO FINAL PADRONIZADO\n// ============================\n\nreturn [{\n  ...input,\n  cpf_profissional,\n  medico_nome_oficial,\n  cpf: formatarCPF(input.cpf),\n  data_iso: dataConvertida.iso, // YYYY-MM-DD\n  data_br: dataConvertida.br    // DD/MM/YYYY\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        16
+      ],
+      "id": "2ac64dec-7f1c-4a74-bd69-626f5628b279",
+      "name": "Padroniza Ação Horários"
+    },
+    {
+      "parameters": {
+        "jsCode": "function normalizar(texto) {\n  return String(texto || \"\")\n    .normalize(\"NFD\")\n    .replace(/[\\u0300-\\u036f]/g, \"\")\n    .toLowerCase()\n    .trim();\n}\n\nfunction somenteDigitos(valor) {\n  return String(valor || \"\").replace(/\\D/g, \"\");\n}\n\nfunction formatarCPF(cpf) {\n  const d = somenteDigitos(cpf);\n  if (d.length !== 11) return null;\n  return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`;\n}\n\nfunction converterData(dataInput) {\n  if (!dataInput) return { iso: null, br: null };\n\n  const data = String(dataInput).trim();\n\n  if (/^\\d{4}-\\d{2}-\\d{2}$/.test(data)) {\n    const [ano, mes, dia] = data.split(\"-\");\n    return { iso: data, br: `${dia}/${mes}/${ano}` };\n  }\n\n  if (/^\\d{2}\\/\\d{2}\\/\\d{4}$/.test(data)) {\n    const [dia, mes, ano] = data.split(\"/\");\n    return { iso: `${ano}-${mes}-${dia}`, br: data };\n  }\n\n  return { iso: null, br: null };\n}\n\nfunction converterDataBR(dataInput) {\n  if (!dataInput) return null;\n\n  const data = String(dataInput).trim();\n\n  if (/^\\d{4}-\\d{2}-\\d{2}$/.test(data)) {\n    const [ano, mes, dia] = data.split(\"-\");\n    return `${dia}/${mes}/${ano}`;\n  }\n\n  if (/^\\d{2}\\/\\d{2}\\/\\d{4}$/.test(data)) {\n    return data;\n  }\n\n  return null;\n}\n\nfunction normalizarHora(horaInput) {\n  if (!horaInput) return null;\n\n  let hora = String(horaInput).toLowerCase().trim();\n  hora = hora.replace(/\\s/g, \"\");\n\n  if (/^\\d{1,2}h$/.test(hora)) {\n    hora = hora.replace(\"h\", \":00\");\n  }\n\n  if (/^\\d{1,2}$/.test(hora)) {\n    hora = hora + \":00\";\n  }\n\n  if (/^\\d{1,2}:\\d{1}$/.test(hora)) {\n    const [h, m] = hora.split(\":\");\n    hora = `${h}:${m.padStart(2, \"0\")}`;\n  }\n\n  if (/^\\d{1,2}:\\d{2}$/.test(hora)) {\n    const [h, m] = hora.split(\":\").map(Number);\n    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {\n      return `${String(h).padStart(2,\"0\")}:${String(m).padStart(2,\"0\")}`;\n    }\n  }\n\n  return null;\n}\n\nfunction normalizarGenero(generoInput) {\n  if (!generoInput) return null;\n  const g = normalizar(generoInput);\n  if (g.startsWith(\"f\")) return \"F\";\n  if (g.startsWith(\"m\")) return \"M\";\n  return null;\n}\n\n// ===== NOVA LÓGICA DE CONVÊNIO =====\n\nfunction tratarConvenio(convenioInput, numeroCarteirinha) {\n  const conv = normalizar(convenioInput);\n\n  const conveniosPermitidos = [\n    \"unimed\",\n    \"ipsemg\",\n    \"sul america\",\n    \"particular\",\n    \"bom pastor\",\n    \"sao luiz\",\n    \"tabela social\"\n  ];\n\n  const encontrado = conveniosPermitidos.find(c =>\n    conv.includes(c)\n  );\n\n  if (!encontrado) {\n    return { erro: \"Convênio não aceito pela clínica.\" };\n  }\n\n  // Carteirinha obrigatória\n  if (\n    [\"unimed\", \"ipsemg\", \"sul america\"].includes(encontrado) &&\n    !numeroCarteirinha\n  ) {\n    return { erro: \"Número da carteirinha é obrigatório para esse convênio.\" };\n  }\n\n  // Definir valor\n  let valor = 450; // padrão particular\n\n  if (encontrado !== \"particular\") {\n    valor = 300;\n  }\n\n  return {\n    nome_normalizado: encontrado,\n    valor_consulta: valor\n  };\n}\n\n// ===========================\n// INÍCIO\n// ===========================\n\nconst input = $json.body || $json;\n\nconst medicoNormalizado = normalizar(input.medico);\n\nconst mapa = [\n  { palavras: [\"yugo\"], cpf: \"000.000.000-00\", nome: \"Dr. Yugo Yamazaki\" },\n  { palavras: [\"rubens\"], cpf: \"000.000.000-00\", nome: \"Dr. Rubens Martins Filho\" },\n  { palavras: [\"engler\"], cpf: \"000.000.000-00\", nome: \"Dr. Engler Mori Ferreira\" },\n  { palavras: [\"luiz\"], cpf: \"000.000.000-00\", nome: \"Dr. Luiz H. Cunha\" }\n];\n\nconst encontrado = mapa.find(m =>\n  m.palavras.some(p => medicoNormalizado.includes(p))\n);\n\nconst dataConvertida = converterData(input.data);\n\nconst pacienteCPF = somenteDigitos(input.paciente?.cpf);\nconst pacienteCPFFormatado = formatarCPF(pacienteCPF);\n\nconst convenioTratado = tratarConvenio(\n  input.paciente?.convenio,\n  input.paciente?.numero_carteirinha\n);\n\nif (convenioTratado.erro) {\n  return [{\n    status: \"erro\",\n    mensagem: convenioTratado.erro\n  }];\n}\n\n// ===========================\n// RETORNO FINAL\n// ===========================\n\nreturn [{\n  ...input,\n\n  status: \"ok\",\n\n  cpf_profissional: encontrado?.cpf || null,\n  medico_nome_oficial: encontrado?.nome || null,\n\n  data_iso: dataConvertida.iso,\n  data_br: dataConvertida.br,\n\n  hora: normalizarHora(input.hora),\n\n  valor_consulta: convenioTratado.valor_consulta,\n  convenio_normalizado: convenioTratado.nome_normalizado,\n\n  paciente: {\n    ...input.paciente,\n    cpf: pacienteCPF,\n    cpf_formatado: pacienteCPFFormatado,\n    telefone: somenteDigitos(input.paciente?.telefone),\n    genero: normalizarGenero(input.paciente?.genero),\n    data_nascimento: converterDataBR(input.paciente?.data_nascimento)\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        400
+      ],
+      "id": "fc7c117b-bc77-4485-ad3b-29eb84efb45a",
+      "name": "Padroniza Ação Agendar"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "9221feb6-9769-4566-a454-a4be8a9bf6f7",
+      "name": "Retorna Convênio Não Encontrado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        512,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "c954b3d1-908c-4e3e-acef-dc54b7e33ce3",
+      "name": "Retorna Cancelamento",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -384,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"Consulta agendada!\",\n  \"id_agenda\": \"{{ $json.id_agenda || '' }}\",\n  \"genero\": \"{{ $('Padroniza Ação Agendar').first().json.paciente.genero || '' }}\",\n  \"data_nascimento\": \"{{ $('Padroniza Ação Agendar').first().json.paciente.data_nascimento  || '' }}\",\n  \"convenio\": \"{{ $('Padroniza Ação Agendar').first().json.paciente.convenio || '' }}\",\n  \"numero_convenio\": \"{{ $('Padroniza Ação Agendar').first().json.paciente.numero_carteirinha || '' }}\",\n  \"cpf\": \"{{ $('Padroniza Ação Agendar').first().json.paciente.cpf || '' }}\"\n}",
+        "options": {}
+      },
+      "id": "a0e0b6f3-a546-4e93-9066-b129e1b7f69b",
+      "name": "Retorna ID Agendamento",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1408,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  status: \"Para consultar horários, preciso do nome médico e da data.\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "1391f897-f193-4178-aae7-4b627344de86",
+      "name": "Retorna Dados Incompletos [1]",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  status: \"Dados insuficientes para agendar.\"\n}",
+        "options": {}
+      },
+      "id": "549859df-a297-4bb3-bcec-a0359fc90625",
+      "name": "Retorna Dados Incompletos [2]",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://api.4medic.com.br/api/v1/agenda/cancel",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.API_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"id_agenda\": {{ $json.body.id_agenda }},\n  \"justificativa\": \"{{ $json.body.justificativa }}\"\n}",
+        "options": {}
+      },
+      "id": "e9191d74-bd2b-4930-af72-b464cf8a54e3",
+      "name": "4Medic | POST cadastrar agendamento2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -608,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vitale-consultas",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1056,
+        400
+      ],
+      "id": "95145977-f91b-4386-9e31-1185c0d1796c",
+      "name": "Webhook (GPTMaker)",
+      "webhookId": ""
+    }
+  ],
+  "connections": {
+    "Validar campos (horários)": {
+      "main": [
+        [
+          {
+            "node": "Retorna Dados Incompletos [1]",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4Medic | Horários disponíveis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4Medic | Horários disponíveis": {
+      "main": [
+        [
+          {
+            "node": "Mensagem Horários",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar campos (agendar)": {
+      "main": [
+        [
+          {
+            "node": "Retorna Dados Incompletos [2]",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4Medic | GET convenios",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch (ação)": {
+      "main": [
+        [
+          {
+            "node": "Padroniza Ação Horários",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Padroniza Ação Agendar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4Medic | POST cadastrar agendamento2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem Horários": {
+      "main": [
+        [
+          {
+            "node": "Retorna Horários",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4Medic | GET paciente por CPF": {
+      "main": [
+        [
+          {
+            "node": "4Medic | POST cadastrar agendamento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Verifica Paciente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4Medic | POST criar paciente": {
+      "main": [
+        [
+          {
+            "node": "4Medic | POST cadastrar agendamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verifica Paciente": {
+      "main": [
+        [
+          {
+            "node": "4Medic | POST criar paciente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4Medic | POST cadastrar agendamento": {
+      "main": [
+        [
+          {
+            "node": "Retorna ID Agendamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4Medic | GET convenios": {
+      "main": [
+        [
+          {
+            "node": "Valida Convênio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "4Medic | GET paciente por CPF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Retorna Convênio Não Encontrado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valida Convênio": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Padroniza Ação Horários": {
+      "main": [
+        [
+          {
+            "node": "Validar campos (horários)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Padroniza Ação Agendar": {
+      "main": [
+        [
+          {
+            "node": "Validar campos (agendar)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4Medic | POST cadastrar agendamento2": {
+      "main": [
+        [
+          {
+            "node": "Retorna Cancelamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook (GPTMaker)": {
+      "main": [
+        [
+          {
+            "node": "Switch (ação)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  }
+}

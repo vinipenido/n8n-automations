@@ -1,0 +1,111 @@
+{
+  "name": "Checa Cliente",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "a689cdf4-a8be-4cbc-8df0-cfa7779ee746",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "501778ab-cf1e-4ebd-906e-96e3a90cda1d",
+      "name": "Webhook",
+      "webhookId": ""
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    c.id_cliente,\n    c.nome as razao_social,\n    c.fantasia,\n    c.cnpj,\n    c.cidade,\n    c.uf,\n    c.id_convenio,\n    conv.descricao as nome_convenio\nFROM t_cliente c\nLEFT JOIN t_convenio conv ON c.id_convenio = conv.id_convenio\nWHERE\n    -- 1. Busca por ID direto\n    ( '{{ $json.body.tipo_de_busca }}' = 'id_cliente' AND c.id_cliente = $1 )\n    OR\n    -- 2. Busca por CNPJ\n    ( '{{ $json.body.tipo_de_busca }}' = 'cnpj' AND (\n        c.cnpj = $1 \n        OR REPLACE(REPLACE(REPLACE(c.cnpj, '.', ''), '/', ''), '-', '') = $1\n    ))\n    OR\n    -- 3. Busca por Nome ou Fantasia (BLINDADO COM UPPER)\n    ( '{{ $json.body.tipo_de_busca }}' = 'nome_cliente' AND (\n        UPPER(c.nome) LIKE CONCAT('%', UPPER($1), '%') \n        OR UPPER(c.fantasia) LIKE CONCAT('%', UPPER($1), '%')\n    ))\n    OR\n    -- 4. Busca por ID Convênio\n    ( '{{ $json.body.tipo_de_busca }}' = 'id_convenio' AND c.id_convenio = $1 )\n    OR\n    -- 5. Busca por Nome Convênio (BLINDADO COM UPPER)\n    ( '{{ $json.body.tipo_de_busca }}' = 'nome_convenio' AND UPPER(conv.descricao) LIKE CONCAT('%', UPPER($1), '%') )\n\nORDER BY c.nome ASC\nLIMIT 15;",
+        "options": {
+          "queryReplacement": "={{ $json.body.cliente }}"
+        }
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "3c409d4f-c603-4ef2-b601-32669847dbbe",
+      "name": "Execute a SQL query",
+      "alwaysOutputData": true,
+      "credentials": {
+        "mySql": {
+          "name": "<mySql>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        672,
+        0
+      ],
+      "id": "3807cdee-25d0-42a0-b83a-a02abaa47b49",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Recupera os resultados e filtra \"fantasmas\" (objetos vazios sem ID)\nconst clientesEncontrados = items\n  .map(item => item.json)\n  .filter(item => item.id_cliente); // Só aceita se tiver ID\n\nconst qtd = clientesEncontrados.length;\n\n// === CENÁRIO 1: NENHUM CLIENTE ENCONTRADO ===\nif (qtd === 0) {\n  return [{\n    json: {\n      encontrado: false,\n      unico_match: false,\n      mensagem_para_gpt: \"Não consegui localizar nenhum cliente com esses dados. Por favor, verifique se o nome, CNPJ ou código estão corretos e tente novamente.\",\n      dados_cliente: null\n    }\n  }];\n}\n\n// === CENÁRIO 2: VÁRIOS CLIENTES (LISTA PARA ESCOLHA) ===\nif (qtd > 1) {\n  let listaTexto = `Encontrei ${qtd} clientes parecidos. Qual deles é o correto?\\n`;\n\n  for (const cli of clientesEncontrados) {\n    // Tratamento de nulos para não aparecer \"undefined\"\n    const nome = cli.razao_social || \"Sem Nome\";\n    const fantasia = cli.fantasia ? `(${cli.fantasia})` : '';\n    const cidade = cli.cidade || \"N/D\";\n    const uf = cli.uf || \"\";\n    const doc = cli.cnpj ? `| CNPJ: ${cli.cnpj}` : '';\n    \n    listaTexto += `\\n🆔 **ID ${cli.id_cliente}** - ${nome} ${fantasia}\\n   📍 ${cidade}/${uf} ${doc}\\n`;\n  }\n\n  return [{\n    json: {\n      encontrado: true,\n      unico_match: false, \n      mensagem_para_gpt: listaTexto,\n      candidatos: clientesEncontrados \n    }\n  }];\n}\n\n// === CENÁRIO 3: EXATAMENTE 1 CLIENTE ===\nconst unico = clientesEncontrados[0];\nconst nomeFinal = unico.fantasia || unico.razao_social || \"Cliente\";\n\nreturn [{\n  json: {\n    encontrado: true,\n    unico_match: true,\n    mensagem_para_gpt: `Encontrei o cliente: ${nomeFinal} (ID ${unico.id_cliente}). Posso gerar o relatório?`,\n    id_cliente_final: unico.id_cliente, \n    dados_completos: unico\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "f2a6f360-ddfd-404c-80db-c10f10ee5223",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}
