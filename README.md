@@ -37,6 +37,10 @@ RAG sobre base de conhecimento, tools de CRM e humanização da resposta.
 | [Agente SDR](agents/agente-sdr/) | 80 | **MCP Server + MCP Client**, agendamento via Google Calendar |
 | [Agente Atendimento/Suporte](agents/agente-atendimento-suporte/) | 66 | Roteamento de intenção e escalonamento para humano |
 
+> A arquitetura de recepção destes três agentes parte de um template de curso;
+> as customizações próprias estão listadas em
+> [agents/README.md](agents/README.md#créditos-e-escopo-do-trabalho-próprio).
+
 ### 🔍 [RAG](rag/) — busca semântica sobre dados de negócio
 
 | Workflow | Nós | O que demonstra |

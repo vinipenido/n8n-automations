@@ -5,6 +5,12 @@ coleta de NPS e escalonamento para atendimento humano.
 
 **66 nós** · RAG · Supabase · Redis · Chatwoot
 
+
+> **Nota de créditos:** a arquitetura de recepção (buffer Redis, entrada
+> multimodal, humanizador, Chatwoot) parte de um template de curso de
+> automação com n8n. As customizações próprias estão detalhadas em
+> [Créditos e escopo do trabalho próprio](../README.md#créditos-e-escopo-do-trabalho-próprio).
+
 ## Objetivo
 
 Resolver dúvidas recorrentes sem fila de espera, e — igualmente importante —

@@ -60,3 +60,27 @@ a execução.
 | Objetivo | Conduzir a venda | Qualificar e agendar | Suportar e escalar |
 | CRM | Airtable (8 tools) | Airtable (6 tools) | Supabase |
 | Extras | Follow-up autônomo | MCP + Google Calendar | Escalonamento humano |
+
+---
+
+## Créditos e escopo do trabalho próprio
+
+A **arquitetura de recepção** compartilhada pelos três agentes — buffer de
+mensagens em Redis, tratamento multimodal na entrada, humanizador na saída e
+integração com Chatwoot — parte de um template de curso de automação com n8n, e
+não é criação original minha.
+
+O que foi construído por mim sobre essa base:
+
+| Agente | Customizações próprias |
+|---|---|
+| [Vendedor](agente-vendedor/) | Modelagem do funil como 8 tools do Airtable; workflow de follow-up autônomo com recuperação de contexto via Memory Manager; seleção de modelo por tarefa |
+| [SDR](agente-sdr/) | Camada **MCP** (servidor de agenda + cliente) desacoplando o Google Calendar dos agentes; funil de qualificação e critérios de agendamento |
+| [Atendimento](agente-atendimento-suporte/) | Base de conhecimento em RAG; coleta de NPS; regras de escalonamento para humano |
+
+Também são de minha autoria os prompts, a modelagem de dados no Supabase e no
+Airtable, e a adaptação de cada agente ao contexto do cliente.
+
+Os demais diretórios deste repositório ([`rag/`](../rag/),
+[`pipelines/`](../pipelines/), [`integrations/`](../integrations/),
+[`utils/`](../utils/)) são construções originais.

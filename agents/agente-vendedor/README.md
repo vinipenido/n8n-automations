@@ -5,6 +5,12 @@ mudança de estágio e executa follow-ups de forma autônoma.
 
 **92 nós** · 4 agentes de IA · 8 tools de CRM · RAG · Redis · Airtable · Supabase
 
+
+> **Nota de créditos:** a arquitetura de recepção (buffer Redis, entrada
+> multimodal, humanizador, Chatwoot) parte de um template de curso de
+> automação com n8n. As customizações próprias estão detalhadas em
+> [Créditos e escopo do trabalho próprio](../README.md#créditos-e-escopo-do-trabalho-próprio).
+
 ## Problema
 
 Leads chegam pelo WhatsApp em volume, em horários irregulares e em formatos

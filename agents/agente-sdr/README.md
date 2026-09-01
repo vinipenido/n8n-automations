@@ -5,6 +5,12 @@ diretamente no Google Calendar — com o calendário exposto via **MCP**.
 
 **80 nós** · MCP Server + MCP Client · Google Calendar · RAG · Airtable
 
+
+> **Nota de créditos:** a arquitetura de recepção (buffer Redis, entrada
+> multimodal, humanizador, Chatwoot) parte de um template de curso de
+> automação com n8n. As customizações próprias estão detalhadas em
+> [Créditos e escopo do trabalho próprio](../README.md#créditos-e-escopo-do-trabalho-próprio).
+
 ## Diferencial: MCP (Model Context Protocol)
 
 Em vez de plugar os nós do Google Calendar direto no agente, este workflow
